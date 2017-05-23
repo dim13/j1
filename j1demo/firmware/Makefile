@@ -1,7 +1,4 @@
 j1.mem j1.bin: *.fs Makefile
-	@echo ': version s" '`svnversion`'" ;' > version.fs
-	date
-	@date +': builddate d# %s. d# %z ;' >> version.fs
 	@gforth -e 'include main.fs bye'
 
 doc: *.fs Makefile
