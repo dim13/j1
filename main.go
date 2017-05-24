@@ -31,18 +31,18 @@ var opcodes = []string{
 	"T",
 	"N",
 	"T+N",
-	"TandN",
-	"TorN",
-	"TxorN",
+	"T&N",
+	"T|N",
+	"T^N",
 	"~T",
-	"N=T",
+	"N==T",
 	"N<T",
-	"NrshiftT",
+	"N>>T",
 	"T-1",
-	"R",
+	"rT",
 	"[T]",
-	"NlshiftT",
-	"depth",
+	"N<<T",
+	"dsp",
 	"Nu<T",
 }
 
@@ -73,15 +73,17 @@ func Decode(v uint16) string {
 		}
 		switch expand((v >> 2) & 3) {
 		case -1:
-			s += " rstack-"
+			s += " r-1"
+		case -2:
+			s += " r-2" // ???
 		case 1:
-			s += " rstack+"
+			s += " r+1"
 		}
 		switch expand(v & 3) {
 		case -1:
-			s += " dstack-"
+			s += " d-1"
 		case 1:
-			s += " dstack+"
+			s += " d+1"
 		}
 		return s
 	}
@@ -94,6 +96,8 @@ func expand(v uint16) int8 {
 		return 0
 	case 1: // 01 → 00000001
 		return 1
+	case 2: // 10 → 11111110
+		return -2
 	case 3: // 11 → 11111111
 		return -1
 	}
