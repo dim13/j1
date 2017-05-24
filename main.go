@@ -23,7 +23,7 @@ func main() {
 	}
 	for i, v := range body {
 		op := Decode(v)
-		fmt.Printf("%0.4x %0.16b %s\n", i, v, op)
+		fmt.Printf("%0.4X %0.4X\t%s\n", i, v, op)
 	}
 }
 
@@ -49,13 +49,13 @@ var opcodes = []string{
 func Decode(v uint16) string {
 	switch {
 	case v&(1<<15) == 1<<15:
-		return fmt.Sprintf("literal %d", v&0x7fff)
+		return fmt.Sprintf("LIT %0.4X", v&0x7fff)
 	case v&(7<<13) == 0:
-		return fmt.Sprintf("ubranch %0.4x", v&0x1fff)
+		return fmt.Sprintf("UBRANCH %0.4X", v&0x1fff)
 	case v&(7<<13) == 1<<13:
-		return fmt.Sprintf("0branch %0.4x", v&0x1fff)
+		return fmt.Sprintf("0BRANCH %0.4X", v&0x1fff)
 	case v&(7<<13) == 1<<14:
-		return fmt.Sprintf("call %0.4x", v&0x1fff)
+		return fmt.Sprintf("CALL %0.4X", v&0x1fff)
 	case v&(7<<13) == 3<<13:
 		op := (v & 15 << 8) >> 8
 		s := "ALU " + opcodes[op]
