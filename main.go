@@ -51,11 +51,11 @@ func Decode(v uint16) string {
 	case v&(1<<15) == 1<<15:
 		return fmt.Sprintf("LIT %0.4X", v&0x7fff)
 	case v&(7<<13) == 0:
-		return fmt.Sprintf("UBRANCH %0.4X", v&0x1fff)
+		return fmt.Sprintf("UBRANCH %0.4X", v<<1)
 	case v&(7<<13) == 1<<13:
-		return fmt.Sprintf("0BRANCH %0.4X", v&0x1fff)
+		return fmt.Sprintf("0BRANCH %0.4X", v<<1)
 	case v&(7<<13) == 1<<14:
-		return fmt.Sprintf("CALL %0.4X", v&0x1fff)
+		return fmt.Sprintf("CALL %0.4X", v<<1)
 	case v&(7<<13) == 3<<13:
 		op := (v >> 8) & 15
 		s := "ALU " + opcodes[op]
