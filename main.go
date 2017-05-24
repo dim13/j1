@@ -91,15 +91,8 @@ func Decode(v uint16) string {
 }
 
 func expand(v uint16) int8 {
-	switch v {
-	case 0: // 00 → 00000000
-		return 0
-	case 1: // 01 → 00000001
-		return 1
-	case 2: // 10 → 11111110
-		return -2
-	case 3: // 11 → 11111111
-		return -1
+	if v&2 != 0 {
+		v |= 0xfc
 	}
-	return 0
+	return int8(v)
 }
