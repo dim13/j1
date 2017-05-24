@@ -57,7 +57,7 @@ func Decode(v uint16) string {
 	case v&(7<<13) == 1<<14:
 		return fmt.Sprintf("CALL %0.4X", v&0x1fff)
 	case v&(7<<13) == 3<<13:
-		op := (v & 15 << 8) >> 8
+		op := (v >> 8) & 15
 		s := "ALU " + opcodes[op]
 		if v&(1<<12) != 0 {
 			s += " R→PC"
@@ -71,13 +71,13 @@ func Decode(v uint16) string {
 		if v&(1<<5) != 0 {
 			s += " N→[T]"
 		}
-		switch expand(v & (3 << 2) >> 2) {
+		switch expand((v >> 2) & 3) {
 		case -1:
 			s += " rstack-"
 		case 1:
 			s += " rstack+"
 		}
-		switch expand(v & (3 << 0) >> 0) {
+		switch expand(v & 3) {
 		case -1:
 			s += " dstack-"
 		case 1:
