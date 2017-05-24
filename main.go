@@ -23,7 +23,7 @@ func main() {
 	}
 	for i, v := range body {
 		op := Decode(v)
-		fmt.Printf("%0.4X %0.4X\t%s\n", i, v, op)
+		fmt.Printf("%0.4X %0.4X\t%s\n", 2*i, v, op)
 	}
 }
 
