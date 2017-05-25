@@ -31,7 +31,7 @@ func Decode(v uint16) Instruction {
 	case v&(7<<13) == 0:
 		return newJump(v)
 	case v&(7<<13) == 1<<13:
-		return newCondJump(v)
+		return newCond(v)
 	case v&(7<<13) == 1<<14:
 		return newCall(v)
 	case v&(7<<13) == 3<<13:
@@ -56,11 +56,11 @@ func newJump(v uint16) Jump   { return Jump(v << 1) }
 func (v Jump) String() string { return fmt.Sprintf("UBRANCH %0.4X", uint16(v)) }
 func (v Jump) isInstruction() {}
 
-type CondJump uint16
+type Cond uint16
 
-func newCondJump(v uint16) CondJump { return CondJump(v << 1) }
-func (v CondJump) String() string   { return fmt.Sprintf("0BRANCH %0.4X", uint16(v)) }
-func (v CondJump) isInstruction()   {}
+func newCond(v uint16) Cond   { return Cond(v << 1) }
+func (v Cond) String() string { return fmt.Sprintf("0BRANCH %0.4X", uint16(v)) }
+func (v Cond) isInstruction() {}
 
 type Call uint16
 
