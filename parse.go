@@ -46,7 +46,7 @@ type Instruction interface {
 
 type Lit uint16
 
-func newLit(v uint16) Lit    { return Lit(v & 0x7fff) }
+func newLit(v uint16) Lit    { return Lit(v &^ uint16(1<<15)) }
 func (v Lit) String() string { return fmt.Sprintf("LIT %0.4X", uint16(v)) }
 func (v Lit) isInstruction() {}
 
