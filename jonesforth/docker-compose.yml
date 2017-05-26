@@ -1,0 +1,6 @@
+version: '3'
+services:
+  jonesforth:
+    build: .
+    cap_add:
+      - SYS_RAWIO
