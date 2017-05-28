@@ -17,6 +17,13 @@ type J1 struct {
 	memory [0x8000]uint16
 }
 
+func (vm *J1) String() string {
+	s := fmt.Sprintf("\tPC %0.4X\n", vm.pc)
+	s += fmt.Sprintf("\tD %v %0.4X %0.4X\n", vm.dsp, vm.dstack[:vm.dsp], vm.st0)
+	s += fmt.Sprintf("\tR %v %0.4X\n", vm.rsp, vm.rstack[:vm.rsp])
+	return s
+}
+
 func (vm *J1) ReadFile(fname string) error {
 	fd, err := os.Open(fname)
 	if err != nil {
@@ -36,11 +43,12 @@ func (vm *J1) ReadFile(fname string) error {
 }
 
 func (vm *J1) Eval() {
-	fmt.Printf("PC: %0.4X\n", vm.pc<<1)
 	ins := Decode(vm.memory[vm.pc])
 	switch v := ins.(type) {
 	case Lit:
+		vm.dstack[vm.dsp] = vm.st0
 		vm.dsp += 1
+		vm.st0 = uint16(v)
 		vm.pc += 1
 		fmt.Println(v)
 	case Jump:
@@ -58,15 +66,24 @@ func (vm *J1) Eval() {
 		vm.st0 = vm.ST0(v)
 		vm.dsp = uint16(int8(vm.dsp) + v.Ddir)
 		vm.rsp = uint16(int8(vm.rsp) + v.Rdir)
-		vm.pc += 1
+		if v.RtoPC {
+			vm.pc = vm.R()
+		} else {
+			vm.pc += 1
+		}
 		fmt.Println(v)
 	}
+	fmt.Println(vm)
 }
 
+func (vm *J1) T() uint16 { return vm.st0 }
+func (vm *J1) N() uint16 { return vm.dstack[vm.dsp] }
+func (vm *J1) R() uint16 { return vm.rstack[vm.rsp] }
+
 func (vm *J1) ST0(v ALU) uint16 {
-	T := vm.st0
-	N := vm.dstack[vm.dsp]
-	R := vm.rstack[vm.rsp]
+	T := vm.T()
+	N := vm.N()
+	R := vm.R()
 	switch v.Opcode {
 	case 0: // T
 		return T
