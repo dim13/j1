@@ -1,4 +1,4 @@
-package main
+package j1
 
 import (
 	"encoding/binary"

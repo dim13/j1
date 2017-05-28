@@ -1,4 +1,4 @@
-package main
+package j1
 
 import (
 	"encoding/binary"
@@ -52,15 +52,18 @@ func (vm *J1) Eval() {
 		vm.dsp += 1
 		fmt.Println(v)
 	case Jump:
+		vm.st0 = vm.T()
 		next = uint16(v)
 		fmt.Println(v)
 	case Cond:
 		if vm.st0 == 0 {
 			next = uint16(v)
 		}
+		vm.st0 = vm.N()
 		vm.dsp -= 1
 		fmt.Println(v)
 	case Call:
+		vm.st0 = vm.T()
 		vm.rstack[vm.rsp] = next
 		vm.rsp += 1
 		next = uint16(v)
