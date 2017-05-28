@@ -24,7 +24,7 @@ func (vm *J1) String() string {
 	return s
 }
 
-func (vm *J1) ReadFile(fname string) error {
+func (vm *J1) LoadFile(fname string) error {
 	fd, err := os.Open(fname)
 	if err != nil {
 		return err
@@ -44,43 +44,51 @@ func (vm *J1) ReadFile(fname string) error {
 
 func (vm *J1) Eval() {
 	ins := Decode(vm.memory[vm.pc])
+	next := vm.pc + 1
 	switch v := ins.(type) {
 	case Lit:
+		vm.st0 = uint16(v)
 		vm.dstack[vm.dsp] = vm.st0
 		vm.dsp += 1
-		vm.st0 = uint16(v)
-		vm.pc += 1
 		fmt.Println(v)
 	case Jump:
-		vm.pc = uint16(v)
+		next = uint16(v)
 		fmt.Println(v)
 	case Cond:
-		vm.pc = uint16(v)
+		if vm.st0 == 0 {
+			next = uint16(v)
+		}
+		vm.dsp -= 1
 		fmt.Println(v)
 	case Call:
-		vm.rstack[vm.rsp] = vm.pc + 1
+		vm.rstack[vm.rsp] = next
 		vm.rsp += 1
-		vm.pc = uint16(v)
+		next = uint16(v)
 		fmt.Println(v)
 	case ALU:
-		vm.st0 = vm.ST0(v)
+		vm.st0 = vm.newST0(v)
 		vm.dsp = uint16(int8(vm.dsp) + v.Ddir)
 		vm.rsp = uint16(int8(vm.rsp) + v.Rdir)
 		if v.RtoPC {
-			vm.pc = vm.R()
-		} else {
-			vm.pc += 1
+			next = vm.R()
+		}
+		if v.NtoAtT {
+			vm.memory[vm.T()] = vm.N()
+		}
+		if v.TtoR {
+			vm.rstack[vm.rsp] = vm.T()
 		}
 		fmt.Println(v)
 	}
 	fmt.Println(vm)
+	vm.pc = next
 }
 
 func (vm *J1) T() uint16 { return vm.st0 }
 func (vm *J1) N() uint16 { return vm.dstack[vm.dsp] }
 func (vm *J1) R() uint16 { return vm.rstack[vm.rsp] }
 
-func (vm *J1) ST0(v ALU) uint16 {
+func (vm *J1) newST0(v ALU) uint16 {
 	T := vm.T()
 	N := vm.N()
 	R := vm.R()

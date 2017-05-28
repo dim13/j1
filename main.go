@@ -1,15 +1,13 @@
 package main
 
-import (
-	"fmt"
-)
+import "fmt"
 
 func main() {
 	vm := new(J1)
-	if err := vm.ReadFile("testdata/j1.bin"); err != nil {
+	if err := vm.LoadFile("testdata/j1.bin"); err != nil {
 		panic(err)
 	}
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 100; i++ {
 		vm.Eval()
 	}
 }
