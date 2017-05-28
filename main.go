@@ -5,6 +5,16 @@ import (
 )
 
 func main() {
+	vm := new(J1)
+	if err := vm.ReadFile("testdata/j1.bin"); err != nil {
+		panic(err)
+	}
+	for i := 0; i < 10; i++ {
+		vm.Eval()
+	}
+}
+
+func dump() {
 	body, err := ReadBin("testdata/j1.bin")
 	if err != nil {
 		panic(err)

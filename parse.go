@@ -52,20 +52,20 @@ func (v Lit) isInstruction() {}
 
 type Jump uint16
 
-func newJump(v uint16) Jump   { return Jump(v << 1) }
-func (v Jump) String() string { return fmt.Sprintf("UBRANCH %0.4X", uint16(v)) }
+func newJump(v uint16) Jump   { return Jump(v &^ uint16(7<<13)) }
+func (v Jump) String() string { return fmt.Sprintf("UBRANCH %0.4X", uint16(v<<1)) }
 func (v Jump) isInstruction() {}
 
 type Cond uint16
 
-func newCond(v uint16) Cond   { return Cond(v << 1) }
-func (v Cond) String() string { return fmt.Sprintf("0BRANCH %0.4X", uint16(v)) }
+func newCond(v uint16) Cond   { return Cond(v &^ uint16(7<<13)) }
+func (v Cond) String() string { return fmt.Sprintf("0BRANCH %0.4X", uint16(v<<1)) }
 func (v Cond) isInstruction() {}
 
 type Call uint16
 
-func newCall(v uint16) Call   { return Call(v << 1) }
-func (v Call) String() string { return fmt.Sprintf("CALL %0.4X", uint16(v)) }
+func newCall(v uint16) Call   { return Call(v &^ uint16(7<<13)) }
+func (v Call) String() string { return fmt.Sprintf("CALL %0.4X", uint16(v<<1)) }
 func (v Call) isInstruction() {}
 
 type ALU struct {
