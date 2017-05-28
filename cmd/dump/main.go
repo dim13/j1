@@ -12,7 +12,6 @@ func main() {
 		panic(err)
 	}
 	for i, v := range body {
-		inst := j1.Decode(v)
-		fmt.Printf("%0.4X %0.4X\t%s\n", 2*i, v, inst)
+		fmt.Printf("%0.4X %0.4X\t%s\n", 2*i, v, j1.Decode(v))
 	}
 }
