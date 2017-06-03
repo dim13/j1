@@ -43,58 +43,58 @@ func (vm *J1) LoadFile(fname string) error {
 }
 
 func (vm *J1) Eval() {
-	ins := Decode(vm.memory[vm.pc])
+	for {
+		ins := Decode(vm.memory[vm.pc])
+		if ins == Jump(0) {
+			break
+		}
+		vm.eval(ins)
+	}
+}
+
+func (vm *J1) eval(ins Instruction) {
 	next := vm.pc + 1
 	switch v := ins.(type) {
 	case Lit:
 		vm.st0 = uint16(v)
 		vm.dstack[vm.dsp] = vm.st0
 		vm.dsp += 1
-		fmt.Println(v)
 	case Jump:
-		vm.st0 = vm.T()
 		next = uint16(v)
-		fmt.Println(v)
 	case Cond:
 		if vm.st0 == 0 {
 			next = uint16(v)
 		}
-		vm.st0 = vm.N()
+		vm.st0 = vm.dstack[vm.dsp]
 		vm.dsp -= 1
-		fmt.Println(v)
 	case Call:
-		vm.st0 = vm.T()
 		vm.rstack[vm.rsp] = next
 		vm.rsp += 1
 		next = uint16(v)
-		fmt.Println(v)
 	case ALU:
 		vm.st0 = vm.newST0(v)
+		if v.NtoAtT {
+			vm.memory[vm.st0] = vm.dstack[vm.dsp]
+		}
+		if v.TtoR {
+			vm.rstack[vm.rsp] = vm.st0
+		}
+		if v.TtoN {
+			vm.dstack[vm.dsp] = vm.st0
+		}
 		vm.dsp = uint16(int8(vm.dsp) + v.Ddir)
 		vm.rsp = uint16(int8(vm.rsp) + v.Rdir)
 		if v.RtoPC {
-			next = vm.R()
+			next = vm.rstack[vm.rsp]
 		}
-		if v.NtoAtT {
-			vm.memory[vm.T()] = vm.N()
-		}
-		if v.TtoR {
-			vm.rstack[vm.rsp] = vm.T()
-		}
-		fmt.Println(v)
 	}
-	fmt.Println(vm)
 	vm.pc = next
+	fmt.Println(ins)
+	fmt.Println(vm)
 }
 
-func (vm *J1) T() uint16 { return vm.st0 }
-func (vm *J1) N() uint16 { return vm.dstack[vm.dsp] }
-func (vm *J1) R() uint16 { return vm.rstack[vm.rsp] }
-
 func (vm *J1) newST0(v ALU) uint16 {
-	T := vm.T()
-	N := vm.N()
-	R := vm.R()
+	T, N, R := vm.st0, vm.dstack[vm.dsp], vm.rstack[vm.rsp]
 	switch v.Opcode {
 	case 0: // T
 		return T
