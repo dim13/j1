@@ -1,10 +1,10 @@
 package j1
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
-	"io"
-	"os"
+	"io/ioutil"
 )
 
 type J1 struct {
@@ -24,22 +24,20 @@ func (vm *J1) String() string {
 	return s
 }
 
+func (vm *J1) LoadBytes(data []byte) error {
+	size := len(data) >> 1
+	if size > len(vm.memory) {
+		return fmt.Errorf("too big")
+	}
+	return binary.Read(bytes.NewReader(data), binary.BigEndian, vm.memory[:size])
+}
+
 func (vm *J1) LoadFile(fname string) error {
-	fd, err := os.Open(fname)
+	data, err := ioutil.ReadFile(fname)
 	if err != nil {
 		return err
 	}
-	defer fd.Close()
-	stat, err := fd.Stat()
-	if err != nil {
-		return err
-	}
-	size := stat.Size() >> 1
-	err = binary.Read(fd, binary.BigEndian, vm.memory[:size])
-	if err != io.ErrUnexpectedEOF {
-		return err
-	}
-	return nil
+	return vm.LoadBytes(data)
 }
 
 func (vm *J1) Eval() {
