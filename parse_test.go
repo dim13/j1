@@ -19,6 +19,7 @@ func TestDecode(t *testing.T) {
 		{0x8000, Lit(0x0000)},
 		{0xffff, Lit(0x7fff)},
 		{0x6000, ALU{Opcode: 0}},
+		{0x6100, ALU{Opcode: 1}},
 		{0x7000, ALU{Opcode: 0, RtoPC: true}},
 		{0x6080, ALU{Opcode: 0, TtoN: true}},
 		{0x6040, ALU{Opcode: 0, TtoR: true}},
