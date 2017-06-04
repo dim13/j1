@@ -70,7 +70,8 @@ func (vm *J1) eval(ins Instruction) {
 		vm.rsp += 1
 		next = uint16(v)
 	case ALU:
-		vm.st0 = vm.newST0(v)
+		vm.dsp = uint16(int8(vm.dsp) + v.Ddir)
+		vm.rsp = uint16(int8(vm.rsp) + v.Rdir)
 		if v.NtoAtT {
 			vm.memory[vm.st0] = vm.dstack[vm.dsp]
 		}
@@ -80,11 +81,10 @@ func (vm *J1) eval(ins Instruction) {
 		if v.TtoN {
 			vm.dstack[vm.dsp] = vm.st0
 		}
-		vm.dsp = uint16(int8(vm.dsp) + v.Ddir)
-		vm.rsp = uint16(int8(vm.rsp) + v.Rdir)
 		if v.RtoPC {
 			next = vm.rstack[vm.rsp]
 		}
+		vm.st0 = vm.newST0(v)
 	}
 	vm.pc = next
 	fmt.Println(ins)
