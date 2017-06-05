@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 )
 
+// J1 Forth processor VM
 type J1 struct {
 	dsp    uint16       // 5 bit Data stack pointer
 	st0    uint16       // 5 bit Return stack pointer
@@ -24,6 +25,7 @@ func (vm *J1) String() string {
 	return s
 }
 
+// LoadBytes into memory
 func (vm *J1) LoadBytes(data []byte) error {
 	size := len(data) >> 1
 	if size > len(vm.memory) {
@@ -32,6 +34,7 @@ func (vm *J1) LoadBytes(data []byte) error {
 	return binary.Read(bytes.NewReader(data), binary.BigEndian, vm.memory[:size])
 }
 
+// LoadFile into memory
 func (vm *J1) LoadFile(fname string) error {
 	data, err := ioutil.ReadFile(fname)
 	if err != nil {
@@ -40,6 +43,7 @@ func (vm *J1) LoadFile(fname string) error {
 	return vm.LoadBytes(data)
 }
 
+// Eval evaluates content of memory
 func (vm *J1) Eval() {
 	for {
 		ins := Decode(vm.memory[vm.pc])
@@ -58,7 +62,7 @@ func (vm *J1) eval(ins Instruction) {
 	case Lit:
 		vm.st0 = uint16(v)
 		vm.dstack[vm.dsp] = vm.st0
-		vm.dsp += 1
+		vm.dsp++
 	case Jump:
 		next = uint16(v)
 	case Cond:
@@ -66,10 +70,10 @@ func (vm *J1) eval(ins Instruction) {
 			next = uint16(v)
 		}
 		vm.st0 = vm.dstack[vm.dsp]
-		vm.dsp -= 1
+		vm.dsp--
 	case Call:
 		vm.rstack[vm.rsp] = next
-		vm.rsp += 1
+		vm.rsp++
 		next = uint16(v)
 	case ALU:
 		if v.RtoPC {

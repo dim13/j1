@@ -6,6 +6,7 @@ import (
 	"os"
 )
 
+// ReadBin file
 func ReadBin(fname string) ([]uint16, error) {
 	fd, err := os.Open(fname)
 	if err != nil {
@@ -24,6 +25,7 @@ func ReadBin(fname string) ([]uint16, error) {
 	return body, nil
 }
 
+// Decode instruction
 func Decode(v uint16) Instruction {
 	switch {
 	case v&(1<<15) != 0:
@@ -40,34 +42,40 @@ func Decode(v uint16) Instruction {
 	return nil
 }
 
+// Instruction interface
 type Instruction interface {
 	isInstruction()
 }
 
+// Lit is a literal
 type Lit uint16
 
 func newLit(v uint16) Lit    { return Lit(v &^ uint16(1<<15)) }
 func (v Lit) String() string { return fmt.Sprintf("LIT %0.4X", uint16(v)) }
 func (v Lit) isInstruction() {}
 
+// Jump is an unconditional branch
 type Jump uint16
 
 func newJump(v uint16) Jump   { return Jump(v &^ uint16(7<<13)) }
 func (v Jump) String() string { return fmt.Sprintf("UBRANCH %0.4X", uint16(v<<1)) }
 func (v Jump) isInstruction() {}
 
+// Cond is a conditional branch
 type Cond uint16
 
 func newCond(v uint16) Cond   { return Cond(v &^ uint16(7<<13)) }
 func (v Cond) String() string { return fmt.Sprintf("0BRANCH %0.4X", uint16(v<<1)) }
 func (v Cond) isInstruction() {}
 
+// Call procedure
 type Call uint16
 
 func newCall(v uint16) Call   { return Call(v &^ uint16(7<<13)) }
 func (v Call) String() string { return fmt.Sprintf("CALL %0.4X", uint16(v<<1)) }
 func (v Call) isInstruction() {}
 
+// ALU instruction
 type ALU struct {
 	Opcode uint16
 	RtoPC  bool
@@ -104,25 +112,25 @@ var opcodes = []string{
 	"N<T", "N>>T", "T-1", "R", "[T]", "N<<T", "depth", "Nu<T",
 }
 
-func (a ALU) String() string {
-	s := "ALU " + opcodes[a.Opcode]
-	if a.RtoPC {
+func (v ALU) String() string {
+	s := "ALU " + opcodes[v.Opcode]
+	if v.RtoPC {
 		s += " R→PC"
 	}
-	if a.TtoN {
+	if v.TtoN {
 		s += " T→N"
 	}
-	if a.TtoR {
+	if v.TtoR {
 		s += " T→R"
 	}
-	if a.NtoAtT {
+	if v.NtoAtT {
 		s += " N→[T]"
 	}
-	if a.Rdir != 0 {
-		s += fmt.Sprintf(" r%+d", a.Rdir)
+	if v.Rdir != 0 {
+		s += fmt.Sprintf(" r%+d", v.Rdir)
 	}
-	if a.Ddir != 0 {
-		s += fmt.Sprintf(" d%+d", a.Ddir)
+	if v.Ddir != 0 {
+		s += fmt.Sprintf(" d%+d", v.Ddir)
 	}
 	return s
 }
