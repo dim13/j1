@@ -60,17 +60,17 @@ func (vm *J1) eval(ins Instruction) {
 	next := vm.pc + 1
 	switch v := ins.(type) {
 	case Lit:
-		vm.st0 = uint16(v)
 		vm.dstack[vm.dsp] = vm.st0
 		vm.dsp++
+		vm.st0 = uint16(v)
 	case Jump:
 		next = uint16(v)
 	case Cond:
 		if vm.st0 == 0 {
 			next = uint16(v)
 		}
-		vm.st0 = vm.dstack[vm.dsp]
 		vm.dsp--
+		vm.st0 = vm.dstack[vm.dsp]
 	case Call:
 		vm.rstack[vm.rsp] = next
 		vm.rsp++
@@ -83,22 +83,45 @@ func (vm *J1) eval(ins Instruction) {
 			vm.memory[vm.st0] = vm.dstack[vm.dsp]
 		}
 
-		vm.st0 = vm.newST0(v)
+		newSt0 := vm.newST0(v)
 
-		vm.dsp = uint16(int8(vm.dsp) + v.Ddir)
-		vm.rsp = uint16(int8(vm.rsp) + v.Rdir)
-		if v.TtoR {
-			vm.rstack[vm.rsp] = vm.st0
-		}
 		if v.TtoN {
-			vm.dstack[vm.dsp] = vm.st0
+			switch v.Ddir {
+			case 1:
+				vm.dstack[vm.dsp] = vm.st0
+				vm.dsp++
+			case -1:
+				vm.dsp--
+				vm.dstack[vm.dsp] = vm.st0
+			default:
+				vm.dstack[vm.dsp] = vm.st0
+			}
 		}
+
+		if v.TtoR {
+			switch v.Rdir {
+			case 1:
+				vm.rstack[vm.rsp] = vm.st0
+				vm.rsp++
+			case -1:
+				vm.rsp--
+				vm.rstack[vm.rsp] = vm.st0
+			default:
+				vm.rstack[vm.rsp] = vm.st0
+			}
+		}
+
+		vm.st0 = newSt0
+		//vm.dsp = uint16(int8(vm.dsp) + v.Ddir)
+		//vm.rsp = uint16(int8(vm.rsp) + v.Rdir)
+		//if v.TtoR { vm.rstack[vm.rsp] = vm.st0 }
+		//if v.TtoN { vm.dstack[vm.dsp] = vm.st0 }
 	}
 	vm.pc = next
 }
 
 func (vm *J1) newST0(v ALU) uint16 {
-	T, N, R := vm.st0, vm.dstack[vm.dsp], vm.rstack[vm.rsp]
+	T, N, R := vm.st0, vm.dstack[(vm.dsp-1)%32], vm.rstack[(vm.rsp-1)%32]
 	switch v.Opcode {
 	case 0: // T
 		return T

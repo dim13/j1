@@ -7,45 +7,85 @@ import (
 
 func TestEval(t *testing.T) {
 	testCases := []struct {
-		begin, end J1
-		ins        Instruction
+		ins []Instruction
+		end J1
 	}{
-		{ins: ALU{}, begin: J1{}, end: J1{pc: 1}},
-		{ins: Jump(0xff), begin: J1{}, end: J1{pc: 0xff}},
-		{ins: Cond(0xff), begin: J1{st0: 1, dsp: 1}, end: J1{pc: 1}},
-		{ins: Cond(0xff), begin: J1{st0: 0, dsp: 1}, end: J1{pc: 0xff}},
-		{ins: Call(0xff), begin: J1{}, end: J1{pc: 0xff, rstack: [32]uint16{1}, rsp: 1}},
-		{ins: Lit(0xff), begin: J1{}, end: J1{pc: 1, st0: 0xff, dstack: [32]uint16{0xff}, dsp: 1}},
-		{ins: Lit(0xfe),
-			begin: J1{pc: 1, st0: 0xff, dstack: [32]uint16{0xff}, dsp: 1},
-			end:   J1{pc: 2, st0: 0xfe, dstack: [32]uint16{0xff, 0xfe}, dsp: 2}},
-		{ins: ALU{Opcode: 0, TtoN: true, Ddir: 1}, // dup
-			begin: J1{pc: 1, st0: 0xaa, dstack: [32]uint16{0xbb}, dsp: 1},
-			end:   J1{pc: 2, st0: 0xaa, dstack: [32]uint16{0xbb, 0xaa}, dsp: 2}},
-		{ins: ALU{Opcode: 1, TtoN: true, Ddir: 1}, // over
-			begin: J1{pc: 1, st0: 0xaa, dstack: [32]uint16{0xbb}, dsp: 1},
-			end:   J1{pc: 2, st0: 0xbb, dstack: [32]uint16{0xbb, 0xaa}, dsp: 2}},
-		// TODO
-		// ALU{Opcode: 6} // invert
-		// ALU{Opcode: 2, Ddir: -1} // +
-		// ALU{Opcode: 1, TtoN: true} // swap
-		// ALU{Opcode: 0, Ddir: -1} // nip
-		// ALU{Opcode: 1, Ddir: -1} // drop
-		// ALU{Opcode: 0, RtoPC: true, Rdir: -1} // ;
-		// ALU{Opcode: 1, TtoR: true, Ddir: -1, Rdir: 1} // >r
-		// ALU{Opcode: 11, TtoN: true, TtoR: true, Ddir: 1, Rdir: -1} // r>
-		// ALU{Opcode: 11, TtoN: true, TtoR: true, Ddir: 1} // r@
-		// ALU{Opcode: 12} // @
-		// ALU{Opcode: 1, Ddir: -1} // !
+		{
+			ins: []Instruction{Jump(0xff)},
+			end: J1{pc: 0xff},
+		},
+		{
+			ins: []Instruction{Lit(1), Cond(0xff)},
+			end: J1{pc: 2},
+		},
+		{
+			ins: []Instruction{Lit(0), Cond(0xff)},
+			end: J1{pc: 0xff},
+		},
+		{
+			ins: []Instruction{Call(0xff)},
+			end: J1{pc: 0xff, rstack: [32]uint16{1}, rsp: 1},
+		},
+		{
+			ins: []Instruction{Lit(0xff)},
+			end: J1{pc: 1, st0: 0xff, dsp: 1},
+		},
+		{
+			ins: []Instruction{Lit(0xff), Lit(0xfe)},
+			end: J1{pc: 2, st0: 0xfe, dstack: [32]uint16{0x00, 0xff}, dsp: 2},
+		},
+		{ // dup
+			ins: []Instruction{Lit(0xff), ALU{Opcode: 0, TtoN: true, Ddir: 1}},
+			end: J1{pc: 2, st0: 0xff, dstack: [32]uint16{0x00, 0xff}, dsp: 2},
+		},
+		{ // over
+			ins: []Instruction{Lit(0xaa), Lit(0xbb), ALU{Opcode: 1, TtoN: true, Ddir: 1}},
+			end: J1{pc: 3, st0: 0xaa, dstack: [32]uint16{0x00, 0xaa, 0xbb}, dsp: 3},
+		},
+		{ // invert
+			ins: []Instruction{Lit(0x00ff), ALU{Opcode: 6}},
+			end: J1{pc: 2, st0: 0xff00, dsp: 1},
+		},
+		{ // +
+			ins: []Instruction{Lit(1), Lit(2), ALU{Opcode: 2, Ddir: -1}},
+			end: J1{pc: 3, st0: 3, dsp: 1, dstack: [32]uint16{0, 1}},
+		},
+		{ // swap
+			ins: []Instruction{Lit(2), Lit(3), ALU{Opcode: 1, TtoN: true}},
+			end: J1{pc: 3, st0: 2, dsp: 2, dstack: [32]uint16{0, 3}},
+		},
+		{ // nip
+		// ALU{Opcode: 0, Ddir: -1}
+		},
+		{ // drop
+		// ALU{Opcode: 1, Ddir: -1}
+		},
+		{ // ;
+		// ALU{Opcode: 0, RtoPC: true, Rdir: -1}
+		},
+		{ // >r
+		// ALU{Opcode: 1, TtoR: true, Ddir: -1, Rdir: 1}
+		},
+		{ // r>
+		// ALU{Opcode: 11, TtoN: true, TtoR: true, Ddir: 1, Rdir: -1}
+		},
+		{ // r@
+		// ALU{Opcode: 11, TtoN: true, TtoR: true, Ddir: 1}
+		},
+		{ // @
+		// ALU{Opcode: 12}
+		},
+		{ // !
+		// ALU{Opcode: 1, Ddir: -1}
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprint(tc.ins), func(t *testing.T) {
-			if _, ok := tc.ins.(ALU); ok {
-				t.SkipNow()
+			state := new(J1)
+			for _, ins := range tc.ins {
+				state.eval(ins)
 			}
-			state := &tc.begin
-			state.eval(tc.ins)
 			if *state != tc.end {
 				t.Errorf("got %v, want %v", state, &tc.end)
 			}
@@ -72,11 +112,9 @@ func TestNextST0(t *testing.T) {
 		{ins: ALU{Opcode: 8}, state: J1{st0: 0xff, dstack: [32]uint16{0xaa, 0xff}, dsp: 2}, st0: 0},
 		{ins: ALU{Opcode: 9}, state: J1{st0: 0x02, dstack: [32]uint16{0xaa, 0xff}, dsp: 2}, st0: 0x3f},
 	}
+	t.SkipNow()
 	for _, tc := range testCases {
 		t.Run(fmt.Sprint(tc.ins), func(t *testing.T) {
-			if tc.state.dsp > 0 {
-				t.SkipNow()
-			}
 			state := &tc.state
 			st0 := state.newST0(tc.ins)
 			if st0 != tc.st0 {
