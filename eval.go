@@ -20,8 +20,9 @@ type J1 struct {
 
 func (vm *J1) String() string {
 	s := fmt.Sprintf("\tPC %0.4X\n", vm.pc)
-	s += fmt.Sprintf("\tD %v %0.4X %0.4X\n", vm.dsp, vm.dstack[:vm.dsp], vm.st0)
-	s += fmt.Sprintf("\tR %v %0.4X\n", vm.rsp, vm.rstack[:vm.rsp])
+	s += fmt.Sprintf("\tST %0.4X\n", vm.st0)
+	s += fmt.Sprintf("\tD %0.4X\n", vm.dstack[:vm.dsp])
+	s += fmt.Sprintf("\tR %0.4X\n", vm.rstack[:vm.rsp])
 	return s
 }
 
@@ -56,72 +57,62 @@ func (vm *J1) Eval() {
 	}
 }
 
+var (
+	opT = ALU{Opcode: 0}
+	opN = ALU{Opcode: 1}
+)
+
 func (vm *J1) eval(ins Instruction) {
-	next := vm.pc + 1
+	dsp := vm.dsp
+	pc := vm.pc + 1
+	st0 := vm.st0
+	rsp := vm.rsp
+
 	switch v := ins.(type) {
 	case Lit:
+		st0 = uint16(v)
+		dsp = vm.dsp + 1
 		vm.dstack[vm.dsp] = vm.st0
-		vm.dsp++
-		vm.st0 = uint16(v)
 	case Jump:
-		next = uint16(v)
-	case Cond:
-		if vm.st0 == 0 {
-			next = uint16(v)
-		}
-		vm.dsp--
-		vm.st0 = vm.dstack[vm.dsp]
+		st0 = vm.newST0(opT)
+		pc = uint16(v)
 	case Call:
-		vm.rstack[vm.rsp] = next
-		vm.rsp++
-		next = uint16(v)
+		st0 = vm.newST0(opT)
+		rsp = vm.rsp + 1
+		vm.rstack[vm.rsp] = pc
+		pc = uint16(v)
+	case Cond:
+		st0 = vm.newST0(opN)
+		dsp = vm.dsp - 1
+		if vm.st0 == 0 {
+			pc = uint16(v)
+		}
 	case ALU:
+		st0 = vm.newST0(v)
 		if v.RtoPC {
-			next = vm.rstack[vm.rsp]
+			pc = vm.rstack[vm.rsp]
 		}
 		if v.NtoAtT {
 			vm.memory[vm.st0] = vm.dstack[vm.dsp]
 		}
-
-		newSt0 := vm.newST0(v)
-
-		if v.TtoN {
-			switch v.Ddir {
-			case 1:
-				vm.dstack[vm.dsp] = vm.st0
-				vm.dsp++
-			case -1:
-				vm.dsp--
-				vm.dstack[vm.dsp] = vm.st0
-			default:
-				vm.dstack[vm.dsp] = vm.st0
-			}
-		}
-
+		dsp = uint16(int8(vm.dsp) + v.Ddir)
+		rsp = uint16(int8(vm.rsp) + v.Rdir)
 		if v.TtoR {
-			switch v.Rdir {
-			case 1:
-				vm.rstack[vm.rsp] = vm.st0
-				vm.rsp++
-			case -1:
-				vm.rsp--
-				vm.rstack[vm.rsp] = vm.st0
-			default:
-				vm.rstack[vm.rsp] = vm.st0
-			}
+			vm.rstack[vm.rsp] = vm.st0
 		}
-
-		vm.st0 = newSt0
-		//vm.dsp = uint16(int8(vm.dsp) + v.Ddir)
-		//vm.rsp = uint16(int8(vm.rsp) + v.Rdir)
-		//if v.TtoR { vm.rstack[vm.rsp] = vm.st0 }
-		//if v.TtoN { vm.dstack[vm.dsp] = vm.st0 }
+		if v.TtoN {
+			vm.dstack[vm.dsp] = vm.st0
+		}
 	}
-	vm.pc = next
+
+	vm.dsp = dsp
+	vm.pc = pc
+	vm.st0 = st0
+	vm.rsp = rsp
 }
 
 func (vm *J1) newST0(v ALU) uint16 {
-	T, N, R := vm.st0, vm.dstack[(vm.dsp-1)%32], vm.rstack[(vm.rsp-1)%32]
+	T, N, R := vm.st0, vm.dstack[vm.dsp], vm.rstack[vm.rsp]
 	switch v.Opcode {
 	case 0: // T
 		return T
