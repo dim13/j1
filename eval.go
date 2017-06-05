@@ -47,6 +47,8 @@ func (vm *J1) Eval() {
 			break
 		}
 		vm.eval(ins)
+		fmt.Println(ins)
+		fmt.Println(vm)
 	}
 }
 
@@ -70,25 +72,25 @@ func (vm *J1) eval(ins Instruction) {
 		vm.rsp += 1
 		next = uint16(v)
 	case ALU:
-		vm.dsp = uint16(int8(vm.dsp) + v.Ddir)
-		vm.rsp = uint16(int8(vm.rsp) + v.Rdir)
+		if v.RtoPC {
+			next = vm.rstack[vm.rsp]
+		}
 		if v.NtoAtT {
 			vm.memory[vm.st0] = vm.dstack[vm.dsp]
 		}
+
+		vm.st0 = vm.newST0(v)
+
+		vm.dsp = uint16(int8(vm.dsp) + v.Ddir)
+		vm.rsp = uint16(int8(vm.rsp) + v.Rdir)
 		if v.TtoR {
 			vm.rstack[vm.rsp] = vm.st0
 		}
 		if v.TtoN {
 			vm.dstack[vm.dsp] = vm.st0
 		}
-		if v.RtoPC {
-			next = vm.rstack[vm.rsp]
-		}
-		vm.st0 = vm.newST0(v)
 	}
 	vm.pc = next
-	fmt.Println(ins)
-	fmt.Println(vm)
 }
 
 func (vm *J1) newST0(v ALU) uint16 {
@@ -135,6 +137,7 @@ func (vm *J1) newST0(v ALU) uint16 {
 			return 1
 		}
 		return 0
+	default:
+		panic("invalid instruction")
 	}
-	return 0
 }
