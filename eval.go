@@ -19,11 +19,8 @@ type J1 struct {
 }
 
 func (vm *J1) String() string {
-	s := fmt.Sprintf("\tPC %0.4X\n", vm.pc)
-	s += fmt.Sprintf("\tST %0.4X\n", vm.st0)
-	s += fmt.Sprintf("\tD %0.4X\n", vm.dstack[:vm.dsp])
-	s += fmt.Sprintf("\tR %0.4X\n", vm.rstack[:vm.rsp])
-	return s
+	return fmt.Sprintf("PC=%0.4X ST=%0.4X D=%0.4X R=%0.4X\n",
+		vm.pc, vm.st0, vm.dstack[:vm.dsp], vm.rstack[:vm.rsp])
 }
 
 // LoadBytes into memory

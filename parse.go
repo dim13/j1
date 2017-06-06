@@ -1,29 +1,6 @@
 package j1
 
-import (
-	"encoding/binary"
-	"fmt"
-	"os"
-)
-
-// ReadBin file
-func ReadBin(fname string) ([]uint16, error) {
-	fd, err := os.Open(fname)
-	if err != nil {
-		return nil, err
-	}
-	defer fd.Close()
-	stat, err := fd.Stat()
-	if err != nil {
-		return nil, err
-	}
-	size := stat.Size()
-	body := make([]uint16, int(size)/2)
-	if err := binary.Read(fd, binary.BigEndian, &body); err != nil {
-		return nil, err
-	}
-	return body, nil
-}
+import "fmt"
 
 // Decode instruction
 func Decode(v uint16) Instruction {
