@@ -19,7 +19,7 @@ type J1 struct {
 }
 
 func (vm *J1) String() string {
-	return fmt.Sprintf("PC=%0.4X ST=%0.4X D=%0.4X R=%0.4X\n",
+	return fmt.Sprintf("PC=%0.4X ST=%0.4X D=%0.4X R=%0.4X",
 		vm.pc, vm.st0, vm.dstack[:vm.dsp], vm.rstack[:vm.rsp])
 }
 
@@ -49,8 +49,7 @@ func (vm *J1) Eval() {
 			break
 		}
 		vm.eval(ins)
-		fmt.Println(ins)
-		fmt.Println(vm)
+		fmt.Printf("%v\t%v\n\n", ins, vm)
 	}
 }
 
