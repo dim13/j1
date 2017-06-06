@@ -86,18 +86,18 @@ func (vm *J1) eval(ins Instruction) {
 	case ALU:
 		st0 = vm.newST0(v)
 		if v.RtoPC {
-			pc = vm.rstack[vm.rsp]
+			pc = vm.rstack[vm.rsp-1]
 		}
 		if v.NtoAtT {
-			vm.memory[vm.st0] = vm.dstack[vm.dsp]
+			vm.memory[vm.st0] = vm.dstack[vm.dsp-1]
 		}
 		dsp = uint16(int8(vm.dsp) + v.Ddir)
 		rsp = uint16(int8(vm.rsp) + v.Rdir)
 		if v.TtoR {
-			vm.rstack[vm.rsp] = vm.st0
+			vm.rstack[rsp-1] = vm.st0
 		}
 		if v.TtoN {
-			vm.dstack[vm.dsp] = vm.st0
+			vm.dstack[dsp-1] = vm.st0
 		}
 	}
 
@@ -107,47 +107,50 @@ func (vm *J1) eval(ins Instruction) {
 	vm.rsp = rsp
 }
 
+func (vm *J1) T() uint16 { return vm.st0 }
+func (vm *J1) N() uint16 { return vm.dstack[vm.dsp-1] }
+func (vm *J1) R() uint16 { return vm.rstack[vm.rsp-1] }
+
 func (vm *J1) newST0(v ALU) uint16 {
-	T, N, R := vm.st0, vm.dstack[vm.dsp], vm.rstack[vm.rsp]
 	switch v.Opcode {
 	case 0: // T
-		return T
+		return vm.T()
 	case 1: // N
-		return N
+		return vm.N()
 	case 2: // T+N
-		return T + N
+		return vm.T() + vm.N()
 	case 3: // T&N
-		return T & N
+		return vm.T() & vm.N()
 	case 4: // T|N
-		return T | N
+		return vm.T() | vm.N()
 	case 5: // T^N
-		return T ^ N
+		return vm.T() ^ vm.N()
 	case 6: // ~T
-		return ^T
+		return ^vm.T()
 	case 7: // N==T
-		if N == T {
+		if vm.N() == vm.T() {
 			return 1
 		}
 		return 0
 	case 8: // N<T
-		if int16(N) < int16(T) {
+		if int16(vm.N()) < int16(vm.T()) {
 			return 1
 		}
 		return 0
 	case 9: // N>>T
-		return N >> (T & 0xf)
+		return vm.N() >> (vm.T() & 0xf)
 	case 10: // T-1
-		return T - 1
+		return vm.T() - 1
 	case 11: // R (rT)
-		return R
+		return vm.R()
 	case 12: // [T]
-		return vm.memory[T]
+		return vm.memory[vm.T()]
 	case 13: // N<<T
-		return N << (T & 0xf)
+		return vm.N() << (vm.T() & 0xf)
 	case 14: // depth (dsp)
 		return (vm.rsp << 8) | vm.dsp
 	case 15: // Nu<T
-		if N < T {
+		if vm.N() < vm.T() {
 			return 1
 		}
 		return 0

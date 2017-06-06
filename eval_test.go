@@ -55,19 +55,24 @@ func TestEval(t *testing.T) {
 			end: J1{pc: 3, st0: 2, dsp: 2, dstack: [32]uint16{0, 3}},
 		},
 		{ // nip
-		// ALU{Opcode: 0, Ddir: -1}
+			ins: []Instruction{Lit(2), Lit(3), ALU{Opcode: 0, Ddir: -1}},
+			end: J1{pc: 3, st0: 3, dsp: 1, dstack: [32]uint16{0, 2}},
 		},
 		{ // drop
-		// ALU{Opcode: 1, Ddir: -1}
+			ins: []Instruction{Lit(2), Lit(3), ALU{Opcode: 1, Ddir: -1}},
+			end: J1{pc: 3, st0: 2, dsp: 1, dstack: [32]uint16{0, 2}},
 		},
 		{ // ;
-		// ALU{Opcode: 0, RtoPC: true, Rdir: -1}
+			ins: []Instruction{Call(10), Call(20), ALU{Opcode: 0, RtoPC: true, Rdir: -1}},
+			end: J1{pc: 11, rsp: 1, rstack: [32]uint16{1, 11}},
 		},
 		{ // >r
-		// ALU{Opcode: 1, TtoR: true, Ddir: -1, Rdir: 1}
+			ins: []Instruction{Lit(10), ALU{Opcode: 1, TtoR: true, Ddir: -1, Rdir: 1}},
+			end: J1{pc: 2, rsp: 1, rstack: [32]uint16{10}},
 		},
 		{ // r>
-		// ALU{Opcode: 11, TtoN: true, TtoR: true, Ddir: 1, Rdir: -1}
+		//	ins: []Instruction{Lit(10), Call(20), ALU{Opcode: 11, TtoN: true, TtoR: true, Ddir: 1, Rdir: -1}},
+		//	end: J1{pc: 2, st0: 21, rsp: 1, rstack: [32]uint16{10}, dsp: 2, dstack: [32]uint16{10}},
 		},
 		{ // r@
 		// ALU{Opcode: 11, TtoN: true, TtoR: true, Ddir: 1}
@@ -76,7 +81,7 @@ func TestEval(t *testing.T) {
 		// ALU{Opcode: 12}
 		},
 		{ // !
-		// ALU{Opcode: 1, Ddir: -1}
+		// ALU{Opcode: 1, NtoAtT: true, Ddir: -1}
 		},
 	}
 
@@ -87,6 +92,8 @@ func TestEval(t *testing.T) {
 				state.eval(ins)
 			}
 			if *state != tc.end {
+				t.Logf("D=%v", state.dstack)
+				t.Logf("R=%v", state.rstack)
 				t.Errorf("got %v, want %v", state, &tc.end)
 			}
 		})
