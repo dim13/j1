@@ -68,7 +68,7 @@ func (vm *J1) eval(ins Instruction) {
 	case Lit:
 		st0 = uint16(v)
 		dsp = vm.dsp + 1
-		vm.dstack[vm.dsp] = vm.st0
+		vm.dstack[vm.dsp] = vm.T()
 	case Jump:
 		st0 = vm.newST0(opT)
 		pc = uint16(v)
@@ -86,18 +86,18 @@ func (vm *J1) eval(ins Instruction) {
 	case ALU:
 		st0 = vm.newST0(v)
 		if v.RtoPC {
-			pc = vm.rstack[vm.rsp-1]
+			pc = vm.R()
 		}
 		if v.NtoAtT {
-			vm.memory[vm.st0] = vm.dstack[vm.dsp-1]
+			vm.memory[vm.st0] = vm.N()
 		}
-		dsp = uint16(int8(vm.dsp) + v.Ddir)
-		rsp = uint16(int8(vm.rsp) + v.Rdir)
+		dsp = uint16(int8(vm.dsp)+v.Ddir) % 32
+		rsp = uint16(int8(vm.rsp)+v.Rdir) % 32
 		if v.TtoR {
-			vm.rstack[vm.rsp-1] = vm.st0
+			vm.rstack[vm.rsp] = vm.T()
 		}
 		if v.TtoN {
-			vm.dstack[vm.dsp-1] = vm.st0
+			vm.dstack[vm.dsp] = vm.T()
 		}
 	}
 
@@ -111,10 +111,10 @@ func (vm *J1) eval(ins Instruction) {
 func (vm *J1) T() uint16 { return vm.st0 }
 
 // N is second element of data stack
-func (vm *J1) N() uint16 { return vm.dstack[vm.dsp-1] }
+func (vm *J1) N() uint16 { return vm.dstack[(vm.dsp-1)%32] }
 
 // R is top of return stack
-func (vm *J1) R() uint16 { return vm.rstack[vm.rsp-1] }
+func (vm *J1) R() uint16 { return vm.rstack[(vm.rsp-1)%32] }
 
 func (vm *J1) newST0(v ALU) uint16 {
 	switch v.Opcode {
