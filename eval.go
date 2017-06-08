@@ -9,13 +9,13 @@ import (
 
 // J1 Forth processor VM
 type J1 struct {
-	dsp    uint16       // 5 bit Data stack pointer
-	st0    uint16       // 5 bit Return stack pointer
-	pc     uint16       // 13 bit
-	rsp    uint16       // 5 bit
-	dstack [0x20]uint16 // Data stack
-	rstack [0x20]uint16 // Return stack
-	memory [0x8000]uint16
+	dsp    uint16         // 5 bit data stack pointer
+	st0    uint16         // top of data stack
+	pc     uint16         // 13 bit
+	rsp    uint16         // 5 bit retrun stack pointer
+	dstack [0x20]uint16   // data stack
+	rstack [0x20]uint16   // deturn stack
+	memory [0x8000]uint16 // memory
 }
 
 func (vm *J1) String() string {
@@ -94,10 +94,10 @@ func (vm *J1) eval(ins Instruction) {
 		dsp = uint16(int8(vm.dsp) + v.Ddir)
 		rsp = uint16(int8(vm.rsp) + v.Rdir)
 		if v.TtoR {
-			vm.rstack[rsp-1] = vm.st0
+			vm.rstack[vm.rsp-1] = vm.st0
 		}
 		if v.TtoN {
-			vm.dstack[dsp-1] = vm.st0
+			vm.dstack[vm.dsp-1] = vm.st0
 		}
 	}
 
@@ -107,8 +107,13 @@ func (vm *J1) eval(ins Instruction) {
 	vm.rsp = rsp
 }
 
+// T is top of data stack
 func (vm *J1) T() uint16 { return vm.st0 }
+
+// N is second element of data stack
 func (vm *J1) N() uint16 { return vm.dstack[vm.dsp-1] }
+
+// R is top of return stack
 func (vm *J1) R() uint16 { return vm.rstack[vm.rsp-1] }
 
 func (vm *J1) newST0(v ALU) uint16 {
