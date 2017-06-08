@@ -94,10 +94,10 @@ func (vm *J1) eval(ins Instruction) {
 		dsp = uint16(int8(vm.dsp)+v.Ddir) % 32
 		rsp = uint16(int8(vm.rsp)+v.Rdir) % 32
 		if v.TtoR {
-			vm.rstack[vm.rsp] = vm.T()
+			vm.rstack[(rsp-1)%32] = vm.T()
 		}
 		if v.TtoN {
-			vm.dstack[vm.dsp] = vm.T()
+			vm.dstack[(dsp-1)%32] = vm.T()
 		}
 	}
 
