@@ -57,7 +57,7 @@ func (vm *J1) Eval() {
 			break
 		}
 		vm.eval(ins)
-		fmt.Printf("%v\t%v\n", ins, vm)
+		fmt.Printf("%-30s%s\n", ins, vm)
 	}
 }
 
