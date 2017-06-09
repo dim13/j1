@@ -71,17 +71,20 @@ func TestEval(t *testing.T) {
 			end: J1{pc: 2, rsp: 1, rstack: [32]uint16{0, 10}},
 		},
 		{ // r>
-		//	ins: []Instruction{Lit(10), Call(20), ALU{Opcode: 11, TtoN: true, TtoR: true, Ddir: 1, Rdir: -1}},
-		//	end: J1{pc: 21, st0: 2, rsp: 0, rstack: [32]uint16{10, 2}, dsp: 2, dstack: [32]uint16{0, 0, 10}},
+			ins: []Instruction{Lit(10), Call(20), ALU{Opcode: 11, TtoN: true, TtoR: true, Ddir: 1, Rdir: -1}},
+			end: J1{pc: 21, st0: 2, dsp: 2, dstack: [32]uint16{0, 0, 10}, rsp: 0, rstack: [32]uint16{10, 2}},
 		},
 		{ // r@
-		// ALU{Opcode: 11, TtoN: true, TtoR: true, Ddir: 1}
+			ins: []Instruction{Lit(10), ALU{Opcode: 11, TtoN: true, TtoR: true, Ddir: 1}},
+			end: J1{pc: 2, dsp: 2, dstack: [32]uint16{0, 0, 10}, rstack: [32]uint16{10}},
 		},
 		{ // @
-		// ALU{Opcode: 12}
+			ins: []Instruction{ALU{Opcode: 12}},
+			end: J1{pc: 1},
 		},
 		{ // !
-		// ALU{Opcode: 1, NtoAtT: true, Ddir: -1}
+			ins: []Instruction{Lit(1), Lit(0), ALU{Opcode: 1, NtoAtT: true, Ddir: -1}},
+			end: J1{pc: 3, st0: 1, dsp: 1, dstack: [32]uint16{0, 0, 1}, memory: [0x8000]uint16{1}},
 		},
 	}
 
