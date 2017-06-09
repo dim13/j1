@@ -99,8 +99,8 @@ func (vm *J1) eval(ins Instruction) {
 		if v.NtoAtT {
 			vm.memory[vm.st0] = vm.dstack[vm.dsp]
 		}
-		dsp = uint16(int8(vm.dsp)+v.Ddir) % 32
-		rsp = uint16(int8(vm.rsp)+v.Rdir) % 32
+		dsp = uint16(int8(vm.dsp) + v.Ddir)
+		rsp = uint16(int8(vm.rsp) + v.Rdir)
 		if v.TtoR {
 			vm.rstack[rsp] = vm.st0
 		}
