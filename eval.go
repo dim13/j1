@@ -61,11 +61,6 @@ func (vm *J1) Eval() {
 	}
 }
 
-var (
-	opT = ALU{Opcode: 0}
-	opN = ALU{Opcode: 1}
-)
-
 func (vm *J1) eval(ins Instruction) {
 	dsp := vm.dsp
 	pc := vm.pc + 1
@@ -78,15 +73,15 @@ func (vm *J1) eval(ins Instruction) {
 		dsp = vm.dsp + 1
 		vm.dstack[dsp] = vm.st0
 	case Jump:
-		st0 = vm.newST0(opT)
+		st0 = vm.st0 // T
 		pc = uint16(v)
 	case Call:
-		st0 = vm.newST0(opT)
+		st0 = vm.st0 // T
 		rsp = vm.rsp + 1
 		vm.rstack[rsp] = pc
 		pc = uint16(v)
 	case Cond:
-		st0 = vm.newST0(opN)
+		st0 = vm.dstack[vm.dsp] // N
 		dsp = vm.dsp - 1
 		if vm.st0 == 0 {
 			pc = uint16(v)
