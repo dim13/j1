@@ -67,12 +67,12 @@ func TestEval(t *testing.T) {
 			end: J1{pc: 11, rsp: 1, rstack: [32]uint16{0, 1, 11}},
 		},
 		{ // >r
-		//	ins: []Instruction{Lit(10), ALU{Opcode: 1, TtoR: true, Ddir: -1, Rdir: 1}},
-		//	end: J1{pc: 2, rsp: 1, rstack: [32]uint16{10}},
+			ins: []Instruction{Lit(10), ALU{Opcode: 1, TtoR: true, Ddir: -1, Rdir: 1}},
+			end: J1{pc: 2, rsp: 1, rstack: [32]uint16{0, 10}},
 		},
 		{ // r>
 		//	ins: []Instruction{Lit(10), Call(20), ALU{Opcode: 11, TtoN: true, TtoR: true, Ddir: 1, Rdir: -1}},
-		//	end: J1{pc: 2, st0: 21, rsp: 1, rstack: [32]uint16{10}, dsp: 2, dstack: [32]uint16{10}},
+		//	end: J1{pc: 21, st0: 2, rsp: 0, rstack: [32]uint16{10, 2}, dsp: 2, dstack: [32]uint16{0, 0, 10}},
 		},
 		{ // r@
 		// ALU{Opcode: 11, TtoN: true, TtoR: true, Ddir: 1}
