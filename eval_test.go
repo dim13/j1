@@ -24,7 +24,7 @@ func TestEval(t *testing.T) {
 		},
 		{
 			ins: []Instruction{Call(0xff)},
-			end: J1{pc: 0xff, rstack: [32]uint16{1}, rsp: 1},
+			end: J1{pc: 0xff, rstack: [32]uint16{0x00, 0x01}, rsp: 1},
 		},
 		{
 			ins: []Instruction{Lit(0xff)},
@@ -32,15 +32,15 @@ func TestEval(t *testing.T) {
 		},
 		{
 			ins: []Instruction{Lit(0xff), Lit(0xfe)},
-			end: J1{pc: 2, st0: 0xfe, dstack: [32]uint16{0x00, 0xff}, dsp: 2},
+			end: J1{pc: 2, st0: 0xfe, dstack: [32]uint16{0x00, 0x00, 0xff}, dsp: 2},
 		},
 		{ // dup
 			ins: []Instruction{Lit(0xff), ALU{Opcode: 0, TtoN: true, Ddir: 1}},
-			end: J1{pc: 2, st0: 0xff, dstack: [32]uint16{0x00, 0xff}, dsp: 2},
+			end: J1{pc: 2, st0: 0xff, dstack: [32]uint16{0x00, 0x00, 0xff}, dsp: 2},
 		},
 		{ // over
 			ins: []Instruction{Lit(0xaa), Lit(0xbb), ALU{Opcode: 1, TtoN: true, Ddir: 1}},
-			end: J1{pc: 3, st0: 0xaa, dstack: [32]uint16{0x00, 0xaa, 0xbb}, dsp: 3},
+			end: J1{pc: 3, st0: 0xaa, dstack: [32]uint16{0x00, 0x00, 0xaa, 0xbb}, dsp: 3},
 		},
 		{ // invert
 			ins: []Instruction{Lit(0x00ff), ALU{Opcode: 6}},
@@ -48,23 +48,23 @@ func TestEval(t *testing.T) {
 		},
 		{ // +
 			ins: []Instruction{Lit(1), Lit(2), ALU{Opcode: 2, Ddir: -1}},
-			end: J1{pc: 3, st0: 3, dsp: 1, dstack: [32]uint16{0, 1}},
+			end: J1{pc: 3, st0: 3, dsp: 1, dstack: [32]uint16{0, 0, 1}},
 		},
 		{ // swap
 			ins: []Instruction{Lit(2), Lit(3), ALU{Opcode: 1, TtoN: true}},
-			end: J1{pc: 3, st0: 2, dsp: 2, dstack: [32]uint16{0, 3}},
+			end: J1{pc: 3, st0: 2, dsp: 2, dstack: [32]uint16{0, 0, 3}},
 		},
 		{ // nip
 			ins: []Instruction{Lit(2), Lit(3), ALU{Opcode: 0, Ddir: -1}},
-			end: J1{pc: 3, st0: 3, dsp: 1, dstack: [32]uint16{0, 2}},
+			end: J1{pc: 3, st0: 3, dsp: 1, dstack: [32]uint16{0, 0, 2}},
 		},
 		{ // drop
 			ins: []Instruction{Lit(2), Lit(3), ALU{Opcode: 1, Ddir: -1}},
-			end: J1{pc: 3, st0: 2, dsp: 1, dstack: [32]uint16{0, 2}},
+			end: J1{pc: 3, st0: 2, dsp: 1, dstack: [32]uint16{0, 0, 2}},
 		},
 		{ // ;
 			ins: []Instruction{Call(10), Call(20), ALU{Opcode: 0, RtoPC: true, Rdir: -1}},
-			end: J1{pc: 11, rsp: 1, rstack: [32]uint16{1, 11}},
+			end: J1{pc: 11, rsp: 1, rstack: [32]uint16{0, 1, 11}},
 		},
 		{ // >r
 		//	ins: []Instruction{Lit(10), ALU{Opcode: 1, TtoR: true, Ddir: -1, Rdir: 1}},

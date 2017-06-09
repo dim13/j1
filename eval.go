@@ -18,9 +18,17 @@ type J1 struct {
 	memory [0x8000]uint16 // memory
 }
 
+// Reset VM
+func (vm *J1) Reset() {
+	vm.dsp = 0
+	vm.st0 = 0
+	vm.pc = 0
+	vm.rsp = 0
+}
+
 func (vm *J1) String() string {
 	return fmt.Sprintf("PC=%0.4X ST=%0.4X D=%0.4X R=%0.4X",
-		vm.pc, vm.st0, vm.dstack[:vm.dsp], vm.rstack[:vm.rsp])
+		vm.pc, vm.st0, vm.dstack[:vm.dsp+1], vm.rstack[:vm.rsp+1])
 }
 
 // LoadBytes into memory
@@ -68,14 +76,14 @@ func (vm *J1) eval(ins Instruction) {
 	case Lit:
 		st0 = uint16(v)
 		dsp = vm.dsp + 1
-		vm.dstack[vm.dsp] = vm.T()
+		vm.dstack[dsp] = vm.st0
 	case Jump:
 		st0 = vm.newST0(opT)
 		pc = uint16(v)
 	case Call:
 		st0 = vm.newST0(opT)
 		rsp = vm.rsp + 1
-		vm.rstack[vm.rsp] = pc
+		vm.rstack[rsp] = pc
 		pc = uint16(v)
 	case Cond:
 		st0 = vm.newST0(opN)
@@ -86,18 +94,18 @@ func (vm *J1) eval(ins Instruction) {
 	case ALU:
 		st0 = vm.newST0(v)
 		if v.RtoPC {
-			pc = vm.R()
+			pc = vm.rstack[vm.rsp]
 		}
 		if v.NtoAtT {
-			vm.memory[vm.st0] = vm.N()
+			vm.memory[vm.st0] = vm.dstack[vm.dsp]
 		}
 		dsp = uint16(int8(vm.dsp)+v.Ddir) % 32
 		rsp = uint16(int8(vm.rsp)+v.Rdir) % 32
 		if v.TtoR {
-			vm.rstack[(rsp-1)%32] = vm.T()
+			vm.rstack[rsp] = vm.st0
 		}
 		if v.TtoN {
-			vm.dstack[(dsp-1)%32] = vm.T()
+			vm.dstack[dsp] = vm.st0
 		}
 	}
 
@@ -107,55 +115,47 @@ func (vm *J1) eval(ins Instruction) {
 	vm.rsp = rsp
 }
 
-// T is top of data stack
-func (vm *J1) T() uint16 { return vm.st0 }
-
-// N is second element of data stack
-func (vm *J1) N() uint16 { return vm.dstack[(vm.dsp-1)%32] }
-
-// R is top of return stack
-func (vm *J1) R() uint16 { return vm.rstack[(vm.rsp-1)%32] }
-
 func (vm *J1) newST0(v ALU) uint16 {
+	T, N, R := vm.st0, vm.dstack[vm.dsp], vm.rstack[vm.rsp]
 	switch v.Opcode {
 	case 0: // T
-		return vm.T()
+		return T
 	case 1: // N
-		return vm.N()
+		return N
 	case 2: // T+N
-		return vm.T() + vm.N()
+		return T + N
 	case 3: // T&N
-		return vm.T() & vm.N()
+		return T & N
 	case 4: // T|N
-		return vm.T() | vm.N()
+		return T | N
 	case 5: // T^N
-		return vm.T() ^ vm.N()
+		return T ^ N
 	case 6: // ~T
-		return ^vm.T()
+		return ^T
 	case 7: // N==T
-		if vm.N() == vm.T() {
+		if N == T {
 			return 1
 		}
 		return 0
 	case 8: // N<T
-		if int16(vm.N()) < int16(vm.T()) {
+		if int16(N) < int16(T) {
 			return 1
 		}
 		return 0
 	case 9: // N>>T
-		return vm.N() >> (vm.T() & 0xf)
+		return N >> (T & 0xf)
 	case 10: // T-1
-		return vm.T() - 1
+		return T - 1
 	case 11: // R (rT)
-		return vm.R()
+		return R
 	case 12: // [T]
-		return vm.memory[vm.T()]
+		return vm.memory[T]
 	case 13: // N<<T
-		return vm.N() << (vm.T() & 0xf)
+		return N << (T & 0xf)
 	case 14: // depth (dsp)
 		return (vm.rsp << 8) | vm.dsp
 	case 15: // Nu<T
-		if vm.N() < vm.T() {
+		if N < T {
 			return 1
 		}
 		return 0
