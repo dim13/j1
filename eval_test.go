@@ -106,23 +106,29 @@ func TestEval(t *testing.T) {
 func TestNextST0(t *testing.T) {
 	testCases := []struct {
 		ins   ALU
-		state J1
 		st0   uint16
+		state J1
 	}{
-		{ins: ALU{Opcode: 0}, state: J1{st0: 0xff}, st0: 0xff},
-		{ins: ALU{Opcode: 1}, state: J1{st0: 0xff, dstack: [32]uint16{0xaa, 0xbb}, dsp: 2}, st0: 0xbb},
-		{ins: ALU{Opcode: 2}, state: J1{st0: 0xff, dstack: [32]uint16{0xaa, 0xbb}, dsp: 2}, st0: 0x1ba},
-		{ins: ALU{Opcode: 3}, state: J1{st0: 0xff, dstack: [32]uint16{0xaa, 0xbb}, dsp: 2}, st0: 0xbb},
-		{ins: ALU{Opcode: 4}, state: J1{st0: 0xff, dstack: [32]uint16{0xaa, 0xbb}, dsp: 2}, st0: 0xff},
-		{ins: ALU{Opcode: 5}, state: J1{st0: 0xff, dstack: [32]uint16{0xaa, 0xbb}, dsp: 2}, st0: 0x44},
-		{ins: ALU{Opcode: 6}, state: J1{st0: 0xaa}, st0: 0xff55},
-		{ins: ALU{Opcode: 7}, state: J1{st0: 0xff, dstack: [32]uint16{0xaa, 0xbb}, dsp: 2}, st0: 0},
-		{ins: ALU{Opcode: 7}, state: J1{st0: 0xff, dstack: [32]uint16{0xaa, 0xff}, dsp: 2}, st0: 1},
-		{ins: ALU{Opcode: 8}, state: J1{st0: 0xff, dstack: [32]uint16{0xaa, 0xbb}, dsp: 2}, st0: 1},
-		{ins: ALU{Opcode: 8}, state: J1{st0: 0xff, dstack: [32]uint16{0xaa, 0xff}, dsp: 2}, st0: 0},
-		{ins: ALU{Opcode: 9}, state: J1{st0: 0x02, dstack: [32]uint16{0xaa, 0xff}, dsp: 2}, st0: 0x3f},
+		{ins: ALU{Opcode: 0}, st0: 0xff, state: J1{st0: 0xff}},
+		{ins: ALU{Opcode: 1}, st0: 0xbb, state: J1{st0: 0xff, dstack: [32]uint16{0, 0xaa, 0xbb}, dsp: 2}},
+		{ins: ALU{Opcode: 2}, st0: 0x01ba, state: J1{st0: 0xff, dstack: [32]uint16{0, 0xaa, 0xbb}, dsp: 2}},
+		{ins: ALU{Opcode: 3}, st0: 0xbb, state: J1{st0: 0xff, dstack: [32]uint16{0, 0xaa, 0xbb}, dsp: 2}},
+		{ins: ALU{Opcode: 4}, st0: 0xff, state: J1{st0: 0xff, dstack: [32]uint16{0, 0xaa, 0xbb}, dsp: 2}},
+		{ins: ALU{Opcode: 5}, st0: 0x44, state: J1{st0: 0xff, dstack: [32]uint16{0, 0xaa, 0xbb}, dsp: 2}},
+		{ins: ALU{Opcode: 6}, st0: 0xff55, state: J1{st0: 0xaa}},
+		{ins: ALU{Opcode: 7}, st0: 0x00, state: J1{st0: 0xff, dstack: [32]uint16{0, 0xaa, 0xbb}, dsp: 2}},
+		{ins: ALU{Opcode: 7}, st0: 0x01, state: J1{st0: 0xff, dstack: [32]uint16{0, 0xaa, 0xff}, dsp: 2}},
+		{ins: ALU{Opcode: 8}, st0: 0x01, state: J1{st0: 0xff, dstack: [32]uint16{0, 0xaa, 0xbb}, dsp: 2}},
+		{ins: ALU{Opcode: 8}, st0: 0x00, state: J1{st0: 0xff, dstack: [32]uint16{0, 0xaa, 0xff}, dsp: 2}},
+		{ins: ALU{Opcode: 9}, st0: 0x3f, state: J1{st0: 0x02, dstack: [32]uint16{0, 0xaa, 0xff}, dsp: 2}},
+		{ins: ALU{Opcode: 10}, st0: 0x54, state: J1{st0: 0x55}},
+		{ins: ALU{Opcode: 11}, st0: 0x5, state: J1{rstack: [32]uint16{0, 0x05}, rsp: 1}},
+		{ins: ALU{Opcode: 12}, st0: 0x5, state: J1{st0: 0x01, memory: [0x8000]uint16{0, 5, 10}}},
+		{ins: ALU{Opcode: 13}, st0: 0x3fc, state: J1{st0: 0x02, dstack: [32]uint16{0, 0xaa, 0xff}, dsp: 2}},
+		{ins: ALU{Opcode: 14}, st0: 0x305, state: J1{rsp: 3, dsp: 5}},
+		{ins: ALU{Opcode: 15}, st0: 0x01, state: J1{st0: 0xff, dstack: [32]uint16{0, 0xaa, 0xbb}, dsp: 2}},
+		{ins: ALU{Opcode: 15}, st0: 0x00, state: J1{st0: 0xff, dstack: [32]uint16{0, 0xaa, 0xff}, dsp: 2}},
 	}
-	t.SkipNow()
 	for _, tc := range testCases {
 		t.Run(fmt.Sprint(tc.ins), func(t *testing.T) {
 			state := &tc.state
@@ -131,5 +137,15 @@ func TestNextST0(t *testing.T) {
 				t.Errorf("got %x, want %x", st0, tc.st0)
 			}
 		})
+	}
+}
+
+func TestLoadBytes(t *testing.T) {
+	data := []byte{1, 2, 4, 8}
+	j1 := new(J1)
+	j1.LoadBytes(data)
+	expect := [0x8000]uint16{0x0102, 0x0408}
+	if j1.memory != expect {
+		t.Errorf("got %v, want %v", j1.memory[:2], expect)
 	}
 }
