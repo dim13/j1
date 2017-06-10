@@ -84,6 +84,25 @@ func expand(v uint16) int8 {
 	return int8(v)
 }
 
+const (
+	opT = iota
+	opN
+	opTplusN
+	opTandN
+	opTorN
+	opTxorN
+	opNotT
+	opNeqT
+	opNleT
+	opNrshiftT
+	opTminus1
+	opR
+	opAtT
+	opNlshiftT
+	opDepth
+	opNuleT
+)
+
 var opcodes = []string{
 	"T", "N", "T+N", "T&N", "T|N", "T^N", "~T", "N==T",
 	"N<T", "N>>T", "T-1", "R", "[T]", "N<<T", "depth", "Nu<T",

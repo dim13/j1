@@ -56,7 +56,7 @@ func (vm *J1) LoadFile(fname string) error {
 
 // Eval evaluates content of memory
 func (vm *J1) Eval() {
-	ticker := time.NewTicker(time.Second / 5)
+	ticker := time.NewTicker(time.Second / 10)
 	defer ticker.Stop()
 	for range ticker.C {
 		ins := Decode(vm.memory[vm.pc])
@@ -64,57 +64,56 @@ func (vm *J1) Eval() {
 			break
 		}
 		vm.eval(ins)
-		fmt.Printf("%-30s%s\n", ins, vm)
+		var rstack [32]uint16
+		for i, v := range vm.rstack {
+			rstack[i] = v << 1
+		}
+		fmt.Printf("%v\n", ins)
+		fmt.Printf("\tPC=%0.4X ST=%0.4X\n", vm.pc<<1, vm.st0)
+		fmt.Printf("\tD=%0.4X\n", vm.dstack[:vm.dsp+1])
+		fmt.Printf("\tR=%0.4X\n", rstack[:vm.rsp+1])
 	}
 }
 
 func (vm *J1) eval(ins Instruction) {
-	dsp := vm.dsp
-	pc := vm.pc + 1
-	st0 := vm.st0
-	rsp := vm.rsp
-
 	switch v := ins.(type) {
 	case Lit:
-		st0 = uint16(v)
-		dsp = vm.dsp + 1
-		vm.dstack[dsp] = vm.st0
+		vm.pc++
+		vm.dsp++
+		vm.dstack[vm.dsp] = vm.st0
+		vm.st0 = uint16(v)
 	case Jump:
-		st0 = vm.st0 // T
-		pc = uint16(v)
+		vm.pc = uint16(v)
 	case Call:
-		st0 = vm.st0 // T
-		rsp = vm.rsp + 1
-		vm.rstack[rsp] = pc
-		pc = uint16(v)
+		vm.rsp++
+		vm.rstack[vm.rsp] = vm.pc + 1
+		vm.pc = uint16(v)
 	case Cond:
-		st0 = vm.dstack[vm.dsp] // N
-		dsp = vm.dsp - 1
+		vm.pc++
 		if vm.st0 == 0 {
-			pc = uint16(v)
+			vm.pc = uint16(v)
 		}
+		vm.st0 = vm.dstack[vm.dsp] // N
+		vm.dsp--
 	case ALU:
-		st0 = vm.newST0(v)
+		st0 := vm.newST0(v)
+		vm.pc++
 		if v.RtoPC {
-			pc = vm.rstack[vm.rsp]
+			vm.pc = vm.rstack[vm.rsp]
 		}
 		if v.NtoAtT {
 			vm.memory[vm.st0] = vm.dstack[vm.dsp]
 		}
-		dsp = uint16(int8(vm.dsp) + v.Ddir)
-		rsp = uint16(int8(vm.rsp) + v.Rdir)
+		vm.dsp = uint16(int8(vm.dsp) + v.Ddir)
+		vm.rsp = uint16(int8(vm.rsp) + v.Rdir)
 		if v.TtoR {
-			vm.rstack[rsp] = vm.st0
+			vm.rstack[vm.rsp] = vm.st0
 		}
 		if v.TtoN {
-			vm.dstack[dsp] = vm.st0
+			vm.dstack[vm.dsp] = vm.st0
 		}
+		vm.st0 = st0
 	}
-
-	vm.dsp = dsp
-	vm.pc = pc
-	vm.st0 = st0
-	vm.rsp = rsp
 }
 
 func (vm *J1) newST0(v ALU) uint16 {
