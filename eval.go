@@ -33,7 +33,7 @@ func (vm *J1) String() string {
 		rstack[i] = v << 1
 	}
 	return fmt.Sprintf("PC=%0.4X ST=%0.4X D=%0.4X R=%0.4X",
-		vm.pc<<1, vm.st0, vm.dstack[1:vm.dsp+1], rstack[1:vm.rsp+1])
+		vm.pc<<1, vm.st0, vm.dstack[:vm.dsp+1], rstack[:vm.rsp+1])
 }
 
 // LoadBytes into memory
