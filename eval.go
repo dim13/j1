@@ -56,7 +56,7 @@ func (vm *J1) LoadFile(fname string) error {
 
 // Eval evaluates content of memory
 func (vm *J1) Eval() {
-	ticker := time.NewTicker(time.Second)
+	ticker := time.NewTicker(time.Second / 5)
 	defer ticker.Stop()
 	for range ticker.C {
 		ins := Decode(vm.memory[vm.pc])
