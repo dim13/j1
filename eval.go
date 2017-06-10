@@ -28,7 +28,7 @@ func (vm *J1) Reset() {
 
 func (vm *J1) String() string {
 	return fmt.Sprintf("PC=%0.4X ST=%0.4X D=%0.4X R=%0.4X",
-		vm.pc, vm.st0, vm.dstack[:vm.dsp+1], vm.rstack[:vm.rsp+1])
+		vm.pc<<1, vm.st0, vm.dstack[:vm.dsp+1], vm.rstack[:vm.rsp+1])
 }
 
 // LoadBytes into memory
