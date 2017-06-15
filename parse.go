@@ -85,22 +85,22 @@ func expand(v uint16) int8 {
 }
 
 const (
-	opT = iota
-	opN
-	opTplusN
-	opTandN
-	opTorN
-	opTxorN
-	opNotT
-	opNeqT
-	opNleT
-	opNrshiftT
-	opTminus1
-	opR
-	opAtT
-	opNlshiftT
-	opDepth
-	opNuleT
+	opT        = iota // 0
+	opN               // 1
+	opTplusN          // 2
+	opTandN           // 3
+	opTorN            // 4
+	opTxorN           // 5
+	opNotT            // 6
+	opNeqT            // 7
+	opNleT            // 8
+	opNrshiftT        // 9
+	opTminus1         // 10
+	opR               // 11
+	opAtT             // 12
+	opNlshiftT        // 13
+	opDepth           // 14
+	opNuleT           // 15
 )
 
 var opcodes = []string{

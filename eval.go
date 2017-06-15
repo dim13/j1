@@ -119,43 +119,43 @@ func (vm *J1) eval(ins Instruction) {
 func (vm *J1) newST0(v ALU) uint16 {
 	T, N, R := vm.st0, vm.dstack[vm.dsp], vm.rstack[vm.rsp]
 	switch v.Opcode {
-	case 0: // T
+	case opT: // T
 		return T
-	case 1: // N
+	case opN: // N
 		return N
-	case 2: // T+N
+	case opTplusN: // T+N
 		return T + N
-	case 3: // T&N
+	case opTandN: // T&N
 		return T & N
-	case 4: // T|N
+	case opTorN: // T|N
 		return T | N
-	case 5: // T^N
+	case opTxorN: // T^N
 		return T ^ N
-	case 6: // ~T
+	case opNotT: // ~T
 		return ^T
-	case 7: // N==T
+	case opNeqT: // N==T
 		if N == T {
 			return 1
 		}
 		return 0
-	case 8: // N<T
+	case opNleT: // N<T
 		if int16(N) < int16(T) {
 			return 1
 		}
 		return 0
-	case 9: // N>>T
+	case opNrshiftT: // N>>T
 		return N >> (T & 0xf)
-	case 10: // T-1
+	case opTminus1: // T-1
 		return T - 1
-	case 11: // R (rT)
+	case opR: // R (rT)
 		return R
-	case 12: // [T]
+	case opAtT: // [T]
 		return vm.memory[T]
-	case 13: // N<<T
+	case opNlshiftT: // N<<T
 		return N << (T & 0xf)
-	case 14: // depth (dsp)
+	case opDepth: // depth (dsp)
 		return (vm.rsp << 8) | vm.dsp
-	case 15: // Nu<T
+	case opNuleT: // Nu<T
 		if N < T {
 			return 1
 		}

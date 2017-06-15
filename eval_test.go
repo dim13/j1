@@ -35,55 +35,55 @@ func TestEval(t *testing.T) {
 			end: J1{pc: 2, st0: 0xfe, dstack: [32]uint16{0x00, 0x00, 0xff}, dsp: 2},
 		},
 		{ // dup
-			ins: []Instruction{Lit(0xff), ALU{Opcode: 0, TtoN: true, Ddir: 1}},
+			ins: []Instruction{Lit(0xff), ALU{Opcode: opT, TtoN: true, Ddir: 1}},
 			end: J1{pc: 2, st0: 0xff, dstack: [32]uint16{0x00, 0x00, 0xff}, dsp: 2},
 		},
 		{ // over
-			ins: []Instruction{Lit(0xaa), Lit(0xbb), ALU{Opcode: 1, TtoN: true, Ddir: 1}},
+			ins: []Instruction{Lit(0xaa), Lit(0xbb), ALU{Opcode: opN, TtoN: true, Ddir: 1}},
 			end: J1{pc: 3, st0: 0xaa, dstack: [32]uint16{0x00, 0x00, 0xaa, 0xbb}, dsp: 3},
 		},
 		{ // invert
-			ins: []Instruction{Lit(0x00ff), ALU{Opcode: 6}},
+			ins: []Instruction{Lit(0x00ff), ALU{Opcode: opNotT}},
 			end: J1{pc: 2, st0: 0xff00, dsp: 1},
 		},
 		{ // +
-			ins: []Instruction{Lit(1), Lit(2), ALU{Opcode: 2, Ddir: -1}},
+			ins: []Instruction{Lit(1), Lit(2), ALU{Opcode: opTplusN, Ddir: -1}},
 			end: J1{pc: 3, st0: 3, dsp: 1, dstack: [32]uint16{0, 0, 1}},
 		},
 		{ // swap
-			ins: []Instruction{Lit(2), Lit(3), ALU{Opcode: 1, TtoN: true}},
+			ins: []Instruction{Lit(2), Lit(3), ALU{Opcode: opN, TtoN: true}},
 			end: J1{pc: 3, st0: 2, dsp: 2, dstack: [32]uint16{0, 0, 3}},
 		},
 		{ // nip
-			ins: []Instruction{Lit(2), Lit(3), ALU{Opcode: 0, Ddir: -1}},
+			ins: []Instruction{Lit(2), Lit(3), ALU{Opcode: opT, Ddir: -1}},
 			end: J1{pc: 3, st0: 3, dsp: 1, dstack: [32]uint16{0, 0, 2}},
 		},
 		{ // drop
-			ins: []Instruction{Lit(2), Lit(3), ALU{Opcode: 1, Ddir: -1}},
+			ins: []Instruction{Lit(2), Lit(3), ALU{Opcode: opN, Ddir: -1}},
 			end: J1{pc: 3, st0: 2, dsp: 1, dstack: [32]uint16{0, 0, 2}},
 		},
 		{ // ;
-			ins: []Instruction{Call(10), Call(20), ALU{Opcode: 0, RtoPC: true, Rdir: -1}},
+			ins: []Instruction{Call(10), Call(20), ALU{Opcode: opT, RtoPC: true, Rdir: -1}},
 			end: J1{pc: 11, rsp: 1, rstack: [32]uint16{0, 1, 11}},
 		},
 		{ // >r
-			ins: []Instruction{Lit(10), ALU{Opcode: 1, TtoR: true, Ddir: -1, Rdir: 1}},
+			ins: []Instruction{Lit(10), ALU{Opcode: opN, TtoR: true, Ddir: -1, Rdir: 1}},
 			end: J1{pc: 2, rsp: 1, rstack: [32]uint16{0, 10}},
 		},
 		{ // r>
-			ins: []Instruction{Lit(10), Call(20), ALU{Opcode: 11, TtoN: true, TtoR: true, Ddir: 1, Rdir: -1}},
+			ins: []Instruction{Lit(10), Call(20), ALU{Opcode: opR, TtoN: true, TtoR: true, Ddir: 1, Rdir: -1}},
 			end: J1{pc: 21, st0: 2, dsp: 2, dstack: [32]uint16{0, 0, 10}, rsp: 0, rstack: [32]uint16{10, 2}},
 		},
 		{ // r@
-			ins: []Instruction{Lit(10), ALU{Opcode: 11, TtoN: true, TtoR: true, Ddir: 1}},
+			ins: []Instruction{Lit(10), ALU{Opcode: opR, TtoN: true, TtoR: true, Ddir: 1}},
 			end: J1{pc: 2, dsp: 2, dstack: [32]uint16{0, 0, 10}, rstack: [32]uint16{10}},
 		},
 		{ // @
-			ins: []Instruction{ALU{Opcode: 12}},
+			ins: []Instruction{ALU{Opcode: opAtT}},
 			end: J1{pc: 1},
 		},
 		{ // !
-			ins: []Instruction{Lit(1), Lit(0), ALU{Opcode: 1, NtoAtT: true, Ddir: -1}},
+			ins: []Instruction{Lit(1), Lit(0), ALU{Opcode: opN, NtoAtT: true, Ddir: -1}},
 			end: J1{pc: 3, st0: 1, dsp: 1, dstack: [32]uint16{0, 0, 1}, memory: [0x8000]uint16{1}},
 		},
 	}
@@ -109,25 +109,25 @@ func TestNextST0(t *testing.T) {
 		st0   uint16
 		state J1
 	}{
-		{ins: ALU{Opcode: 0}, st0: 0xff, state: J1{st0: 0xff}},
-		{ins: ALU{Opcode: 1}, st0: 0xbb, state: J1{st0: 0xff, dstack: [32]uint16{0, 0xaa, 0xbb}, dsp: 2}},
-		{ins: ALU{Opcode: 2}, st0: 0x01ba, state: J1{st0: 0xff, dstack: [32]uint16{0, 0xaa, 0xbb}, dsp: 2}},
-		{ins: ALU{Opcode: 3}, st0: 0xbb, state: J1{st0: 0xff, dstack: [32]uint16{0, 0xaa, 0xbb}, dsp: 2}},
-		{ins: ALU{Opcode: 4}, st0: 0xff, state: J1{st0: 0xff, dstack: [32]uint16{0, 0xaa, 0xbb}, dsp: 2}},
-		{ins: ALU{Opcode: 5}, st0: 0x44, state: J1{st0: 0xff, dstack: [32]uint16{0, 0xaa, 0xbb}, dsp: 2}},
-		{ins: ALU{Opcode: 6}, st0: 0xff55, state: J1{st0: 0xaa}},
-		{ins: ALU{Opcode: 7}, st0: 0x00, state: J1{st0: 0xff, dstack: [32]uint16{0, 0xaa, 0xbb}, dsp: 2}},
-		{ins: ALU{Opcode: 7}, st0: 0x01, state: J1{st0: 0xff, dstack: [32]uint16{0, 0xaa, 0xff}, dsp: 2}},
-		{ins: ALU{Opcode: 8}, st0: 0x01, state: J1{st0: 0xff, dstack: [32]uint16{0, 0xaa, 0xbb}, dsp: 2}},
-		{ins: ALU{Opcode: 8}, st0: 0x00, state: J1{st0: 0xff, dstack: [32]uint16{0, 0xaa, 0xff}, dsp: 2}},
-		{ins: ALU{Opcode: 9}, st0: 0x3f, state: J1{st0: 0x02, dstack: [32]uint16{0, 0xaa, 0xff}, dsp: 2}},
-		{ins: ALU{Opcode: 10}, st0: 0x54, state: J1{st0: 0x55}},
-		{ins: ALU{Opcode: 11}, st0: 0x5, state: J1{rstack: [32]uint16{0, 0x05}, rsp: 1}},
-		{ins: ALU{Opcode: 12}, st0: 0x5, state: J1{st0: 0x01, memory: [0x8000]uint16{0, 5, 10}}},
-		{ins: ALU{Opcode: 13}, st0: 0x3fc, state: J1{st0: 0x02, dstack: [32]uint16{0, 0xaa, 0xff}, dsp: 2}},
-		{ins: ALU{Opcode: 14}, st0: 0x305, state: J1{rsp: 3, dsp: 5}},
-		{ins: ALU{Opcode: 15}, st0: 0x01, state: J1{st0: 0xff, dstack: [32]uint16{0, 0xaa, 0xbb}, dsp: 2}},
-		{ins: ALU{Opcode: 15}, st0: 0x00, state: J1{st0: 0xff, dstack: [32]uint16{0, 0xaa, 0xff}, dsp: 2}},
+		{ins: ALU{Opcode: opT}, st0: 0xff, state: J1{st0: 0xff}},
+		{ins: ALU{Opcode: opN}, st0: 0xbb, state: J1{st0: 0xff, dstack: [32]uint16{0, 0xaa, 0xbb}, dsp: 2}},
+		{ins: ALU{Opcode: opTplusN}, st0: 0x01ba, state: J1{st0: 0xff, dstack: [32]uint16{0, 0xaa, 0xbb}, dsp: 2}},
+		{ins: ALU{Opcode: opTandN}, st0: 0xbb, state: J1{st0: 0xff, dstack: [32]uint16{0, 0xaa, 0xbb}, dsp: 2}},
+		{ins: ALU{Opcode: opTorN}, st0: 0xff, state: J1{st0: 0xff, dstack: [32]uint16{0, 0xaa, 0xbb}, dsp: 2}},
+		{ins: ALU{Opcode: opTxorN}, st0: 0x44, state: J1{st0: 0xff, dstack: [32]uint16{0, 0xaa, 0xbb}, dsp: 2}},
+		{ins: ALU{Opcode: opNotT}, st0: 0xff55, state: J1{st0: 0xaa}},
+		{ins: ALU{Opcode: opNeqT}, st0: 0x00, state: J1{st0: 0xff, dstack: [32]uint16{0, 0xaa, 0xbb}, dsp: 2}},
+		{ins: ALU{Opcode: opNeqT}, st0: 0x01, state: J1{st0: 0xff, dstack: [32]uint16{0, 0xaa, 0xff}, dsp: 2}},
+		{ins: ALU{Opcode: opNleT}, st0: 0x01, state: J1{st0: 0xff, dstack: [32]uint16{0, 0xaa, 0xbb}, dsp: 2}},
+		{ins: ALU{Opcode: opNleT}, st0: 0x00, state: J1{st0: 0xff, dstack: [32]uint16{0, 0xaa, 0xff}, dsp: 2}},
+		{ins: ALU{Opcode: opNrshiftT}, st0: 0x3f, state: J1{st0: 0x02, dstack: [32]uint16{0, 0xaa, 0xff}, dsp: 2}},
+		{ins: ALU{Opcode: opTminus1}, st0: 0x54, state: J1{st0: 0x55}},
+		{ins: ALU{Opcode: opR}, st0: 0x5, state: J1{rstack: [32]uint16{0, 0x05}, rsp: 1}},
+		{ins: ALU{Opcode: opAtT}, st0: 0x5, state: J1{st0: 0x01, memory: [0x8000]uint16{0, 5, 10}}},
+		{ins: ALU{Opcode: opNlshiftT}, st0: 0x3fc, state: J1{st0: 0x02, dstack: [32]uint16{0, 0xaa, 0xff}, dsp: 2}},
+		{ins: ALU{Opcode: opDepth}, st0: 0x305, state: J1{rsp: 3, dsp: 5}},
+		{ins: ALU{Opcode: opNuleT}, st0: 0x01, state: J1{st0: 0xff, dstack: [32]uint16{0, 0xaa, 0xbb}, dsp: 2}},
+		{ins: ALU{Opcode: opNuleT}, st0: 0x00, state: J1{st0: 0xff, dstack: [32]uint16{0, 0xaa, 0xff}, dsp: 2}},
 	}
 	for _, tc := range testCases {
 		t.Run(fmt.Sprint(tc.ins), func(t *testing.T) {
