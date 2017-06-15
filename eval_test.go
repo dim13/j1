@@ -143,7 +143,9 @@ func TestNextST0(t *testing.T) {
 func TestLoadBytes(t *testing.T) {
 	data := []byte{1, 2, 4, 8}
 	j1 := new(J1)
-	j1.LoadBytes(data)
+	if err := j1.LoadBytes(data); err != nil {
+		t.Fatal(err)
+	}
 	expect := [0x8000]uint16{0x0102, 0x0408}
 	if j1.memory != expect {
 		t.Errorf("got %v, want %v", j1.memory[:2], expect)
