@@ -27,15 +27,6 @@ func (vm *J1) Reset() {
 	vm.rsp = 0
 }
 
-func (vm *J1) String() string {
-	var rstack [32]uint16
-	for i, v := range vm.rstack {
-		rstack[i] = v << 1
-	}
-	return fmt.Sprintf("PC=%0.4X ST=%0.4X D=%0.4X R=%0.4X",
-		vm.pc<<1, vm.st0, vm.dstack[:vm.dsp+1], rstack[:vm.rsp+1])
-}
-
 // LoadBytes into memory
 func (vm *J1) LoadBytes(data []byte) error {
 	size := len(data) >> 1
@@ -61,18 +52,23 @@ func (vm *J1) Eval() {
 	for range ticker.C {
 		ins := Decode(vm.memory[vm.pc])
 		if ins == Jump(0) {
-			break
+			return
 		}
 		vm.eval(ins)
-		var rstack [32]uint16
-		for i, v := range vm.rstack {
-			rstack[i] = v << 1
-		}
-		fmt.Printf("%v\n", ins)
-		fmt.Printf("\tPC=%0.4X ST=%0.4X\n", vm.pc<<1, vm.st0)
-		fmt.Printf("\tD=%0.4X\n", vm.dstack[:vm.dsp+1])
-		fmt.Printf("\tR=%0.4X\n", rstack[:vm.rsp+1])
+		fmt.Println(ins)
+		fmt.Println(vm)
 	}
+}
+
+func (vm *J1) String() string {
+	var rstack [32]uint16
+	for i, v := range vm.rstack {
+		rstack[i] = v << 1
+	}
+	s := fmt.Sprintf("\tPC=%0.4X ST=%0.4X\n", vm.pc<<1, vm.st0)
+	s += fmt.Sprintf("\tD=%0.4X\n", vm.dstack[:vm.dsp+1])
+	s += fmt.Sprintf("\tR=%0.4X\n", rstack[:vm.rsp+1])
+	return s
 }
 
 func (vm *J1) eval(ins Instruction) {
