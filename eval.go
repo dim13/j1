@@ -47,16 +47,18 @@ func (vm *J1) LoadFile(fname string) error {
 
 // Eval evaluates content of memory
 func (vm *J1) Eval() {
+	var cycle int
 	ticker := time.NewTicker(time.Second / 10)
 	defer ticker.Stop()
 	for range ticker.C {
+		cycle++
 		ins := Decode(vm.memory[vm.pc])
 		if ins == Jump(0) {
 			return
 		}
 		vm.eval(ins)
-		fmt.Println(ins)
-		fmt.Println(vm)
+		fmt.Printf("%4d %v\n", cycle, ins)
+		fmt.Printf("%v\n", vm)
 	}
 }
 
