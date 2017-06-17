@@ -27,10 +27,17 @@ func (vm *J1) Reset() {
 	vm.rsp = 0
 }
 
+// Depth of stacks
 func (vm *J1) Depth() uint16 { return (uint16(vm.rsp) << 8) | uint16(vm.dsp) }
-func (vm *J1) T() uint16     { return vm.st0 }
-func (vm *J1) N() uint16     { return vm.dstack[vm.dsp] }
-func (vm *J1) R() uint16     { return vm.rstack[vm.rsp] }
+
+// T is top of the data stack
+func (vm *J1) T() uint16 { return vm.st0 }
+
+// N is sendond element in data stack
+func (vm *J1) N() uint16 { return vm.dstack[vm.dsp] }
+
+// R is top of return stack
+func (vm *J1) R() uint16 { return vm.rstack[vm.rsp] }
 
 // LoadBytes into memory
 func (vm *J1) LoadBytes(data []byte) error {
