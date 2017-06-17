@@ -132,7 +132,7 @@ func TestNextST0(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(fmt.Sprint(tc.ins), func(t *testing.T) {
 			state := &tc.state
-			st0 := state.newST0(tc.ins)
+			st0 := state.newST0(tc.ins.Opcode)
 			if st0 != tc.st0 {
 				t.Errorf("got %x, want %x", st0, tc.st0)
 			}

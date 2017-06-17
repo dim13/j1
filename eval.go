@@ -27,18 +27,6 @@ func (vm *J1) Reset() {
 	vm.rsp = 0
 }
 
-// Depth of stacks
-func (vm *J1) Depth() uint16 { return (uint16(vm.rsp) << 8) | uint16(vm.dsp) }
-
-// T is top of the data stack
-func (vm *J1) T() uint16 { return vm.st0 }
-
-// N is sendond element in data stack
-func (vm *J1) N() uint16 { return vm.dstack[vm.dsp] }
-
-// R is top of return stack
-func (vm *J1) R() uint16 { return vm.rstack[vm.rsp] }
-
 // LoadBytes into memory
 func (vm *J1) LoadBytes(data []byte) error {
 	size := len(data) >> 1
@@ -106,7 +94,7 @@ func (vm *J1) eval(ins Instruction) {
 		vm.st0 = vm.dstack[vm.dsp] // N
 		vm.dsp--
 	case ALU:
-		st0 := vm.newST0(v)
+		st0 := vm.newST0(v.Opcode)
 		vm.pc++
 		if v.RtoPC {
 			vm.pc = vm.rstack[vm.rsp]
@@ -126,46 +114,47 @@ func (vm *J1) eval(ins Instruction) {
 	}
 }
 
-func (vm *J1) newST0(v ALU) uint16 {
-	switch v.Opcode {
+func (vm *J1) newST0(opcode uint16) uint16 {
+	T, N, R := vm.st0, vm.dstack[vm.dsp], vm.rstack[vm.rsp]
+	switch opcode {
 	case opT: // T
-		return vm.T()
+		return T
 	case opN: // N
-		return vm.N()
+		return N
 	case opTplusN: // T+N
-		return vm.T() + vm.N()
+		return T + N
 	case opTandN: // T&N
-		return vm.T() & vm.N()
+		return T & N
 	case opTorN: // T|N
-		return vm.T() | vm.N()
+		return T | N
 	case opTxorN: // T^N
-		return vm.T() ^ vm.N()
+		return T ^ N
 	case opNotT: // ~T
-		return ^vm.T()
+		return ^T
 	case opNeqT: // N==T
-		if vm.N() == vm.T() {
+		if N == T {
 			return 1
 		}
 		return 0
 	case opNleT: // N<T
-		if int16(vm.N()) < int16(vm.T()) {
+		if int16(N) < int16(T) {
 			return 1
 		}
 		return 0
 	case opNrshiftT: // N>>T
-		return vm.N() >> (vm.T() & 0xf)
+		return N >> (T & 0xf)
 	case opTminus1: // T-1
-		return vm.T() - 1
+		return T - 1
 	case opR: // R (rT)
-		return vm.R()
+		return R
 	case opAtT: // [T]
-		return vm.memory[vm.T()]
+		return vm.memory[T]
 	case opNlshiftT: // N<<T
-		return vm.N() << (vm.T() & 0xf)
+		return N << (T & 0xf)
 	case opDepth: // depth (dsp)
-		return vm.Depth()
+		return (uint16(vm.rsp) << 8) | uint16(vm.dsp)
 	case opNuleT: // Nu<T
-		if vm.N() < vm.T() {
+		if N < T {
 			return 1
 		}
 		return 0
