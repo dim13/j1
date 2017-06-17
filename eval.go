@@ -15,7 +15,7 @@ type J1 struct {
 	dsp    int8           // 5 bit data stack pointer
 	rsp    int8           // 5 bit retrun stack pointer
 	dstack [0x20]uint16   // data stack
-	rstack [0x20]uint16   // deturn stack
+	rstack [0x20]uint16   // return stack
 	memory [0x8000]uint16 // memory
 }
 
