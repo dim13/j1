@@ -153,9 +153,9 @@ func TestLoadBytes(t *testing.T) {
 }
 
 func TestRest(t *testing.T) {
-	vm := &J1{pc: 100, dsp: 2, rsp: 3, st0: 5}
-	vm.Reset()
-	if vm.pc != 0 || vm.dsp != 0 || vm.rsp != 0 || vm.st0 != 0 {
-		t.Errorf("got %v", vm)
+	j1 := &J1{pc: 100, dsp: 2, rsp: 3, st0: 5}
+	j1.Reset()
+	if j1.pc != 0 || j1.dsp != 0 || j1.rsp != 0 || j1.st0 != 0 {
+		t.Errorf("got %v", j1)
 	}
 }

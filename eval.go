@@ -20,102 +20,102 @@ type J1 struct {
 }
 
 // Reset VM
-func (vm *J1) Reset() {
-	vm.pc = 0
-	vm.st0 = 0
-	vm.dsp = 0
-	vm.rsp = 0
+func (j1 *J1) Reset() {
+	j1.pc = 0
+	j1.st0 = 0
+	j1.dsp = 0
+	j1.rsp = 0
 }
 
 // LoadBytes into memory
-func (vm *J1) LoadBytes(data []byte) error {
+func (j1 *J1) LoadBytes(data []byte) error {
 	size := len(data) >> 1
-	if size > len(vm.memory) {
+	if size > len(j1.memory) {
 		return fmt.Errorf("too big")
 	}
-	return binary.Read(bytes.NewReader(data), binary.BigEndian, vm.memory[:size])
+	return binary.Read(bytes.NewReader(data), binary.BigEndian, j1.memory[:size])
 }
 
 // LoadFile into memory
-func (vm *J1) LoadFile(fname string) error {
+func (j1 *J1) LoadFile(fname string) error {
 	data, err := ioutil.ReadFile(fname)
 	if err != nil {
 		return err
 	}
-	return vm.LoadBytes(data)
+	return j1.LoadBytes(data)
 }
 
 // Eval evaluates content of memory
-func (vm *J1) Eval() {
+func (j1 *J1) Eval() {
 	var cycle int
 	ticker := time.NewTicker(time.Second / 10)
 	defer ticker.Stop()
 	for range ticker.C {
 		cycle++
-		ins := Decode(vm.memory[vm.pc])
+		ins := Decode(j1.memory[j1.pc])
 		if ins == Jump(0) {
 			return
 		}
-		vm.eval(ins)
+		j1.eval(ins)
 		fmt.Printf("%4d %v\n", cycle, ins)
-		fmt.Printf("%v\n", vm)
+		fmt.Printf("%v\n", j1)
 	}
 }
 
-func (vm *J1) String() string {
+func (j1 *J1) String() string {
 	var rstack [32]uint16
-	for i, v := range vm.rstack {
+	for i, v := range j1.rstack {
 		rstack[i] = v << 1
 	}
-	s := fmt.Sprintf("\tPC=%0.4X ST=%0.4X\n", vm.pc<<1, vm.st0)
-	s += fmt.Sprintf("\tD=%0.4X\n", vm.dstack[:vm.dsp+1])
-	s += fmt.Sprintf("\tR=%0.4X\n", rstack[:vm.rsp+1])
+	s := fmt.Sprintf("\tPC=%0.4X ST=%0.4X\n", j1.pc<<1, j1.st0)
+	s += fmt.Sprintf("\tD=%0.4X\n", j1.dstack[:j1.dsp+1])
+	s += fmt.Sprintf("\tR=%0.4X\n", rstack[:j1.rsp+1])
 	return s
 }
 
-func (vm *J1) eval(ins Instruction) {
+func (j1 *J1) eval(ins Instruction) {
 	switch v := ins.(type) {
 	case Lit:
-		vm.pc++
-		vm.dsp++
-		vm.dstack[vm.dsp] = vm.st0
-		vm.st0 = v.Value()
+		j1.pc++
+		j1.dsp++
+		j1.dstack[j1.dsp] = j1.st0
+		j1.st0 = v.Value()
 	case Jump:
-		vm.pc = v.Value()
+		j1.pc = v.Value()
 	case Call:
-		vm.rsp++
-		vm.rstack[vm.rsp] = vm.pc + 1
-		vm.pc = v.Value()
+		j1.rsp++
+		j1.rstack[j1.rsp] = j1.pc + 1
+		j1.pc = v.Value()
 	case Cond:
-		vm.pc++
-		if vm.st0 == 0 {
-			vm.pc = v.Value()
+		j1.pc++
+		if j1.st0 == 0 {
+			j1.pc = v.Value()
 		}
-		vm.st0 = vm.dstack[vm.dsp] // N
-		vm.dsp--
+		j1.st0 = j1.dstack[j1.dsp] // N
+		j1.dsp--
 	case ALU:
-		st0 := vm.newST0(v.Opcode)
-		vm.pc++
+		st0 := j1.newST0(v.Opcode)
+		j1.pc++
 		if v.RtoPC {
-			vm.pc = vm.rstack[vm.rsp]
+			j1.pc = j1.rstack[j1.rsp]
 		}
 		if v.NtoAtT {
-			vm.memory[vm.st0] = vm.dstack[vm.dsp]
+			j1.memory[j1.st0] = j1.dstack[j1.dsp]
 		}
-		vm.dsp += v.Ddir
-		vm.rsp += v.Rdir
+		j1.dsp += v.Ddir
+		j1.rsp += v.Rdir
 		if v.TtoR {
-			vm.rstack[vm.rsp] = vm.st0
+			j1.rstack[j1.rsp] = j1.st0
 		}
 		if v.TtoN {
-			vm.dstack[vm.dsp] = vm.st0
+			j1.dstack[j1.dsp] = j1.st0
 		}
-		vm.st0 = st0
+		j1.st0 = st0
 	}
 }
 
-func (vm *J1) newST0(opcode uint16) uint16 {
-	T, N, R := vm.st0, vm.dstack[vm.dsp], vm.rstack[vm.rsp]
+func (j1 *J1) newST0(opcode uint16) uint16 {
+	T, N, R := j1.st0, j1.dstack[j1.dsp], j1.rstack[j1.rsp]
 	switch opcode {
 	case opT: // T
 		return T
@@ -148,11 +148,11 @@ func (vm *J1) newST0(opcode uint16) uint16 {
 	case opR: // R (rT)
 		return R
 	case opAtT: // [T]
-		return vm.memory[T]
+		return j1.memory[T]
 	case opNlshiftT: // N<<T
 		return N << (T & 0xf)
 	case opDepth: // depth (dsp)
-		return (uint16(vm.rsp) << 8) | uint16(vm.dsp)
+		return (uint16(j1.rsp) << 8) | uint16(j1.dsp)
 	case opNuleT: // Nu<T
 		if N < T {
 			return 1
