@@ -21,7 +21,8 @@ func Decode(v uint16) Instruction {
 
 // Instruction interface
 type Instruction interface {
-	isInstruction()
+	String() string
+	Value() uint16
 }
 
 // Lit is a literal
@@ -29,28 +30,28 @@ type Lit uint16
 
 func newLit(v uint16) Lit    { return Lit(v &^ uint16(1<<15)) }
 func (v Lit) String() string { return fmt.Sprintf("LIT %0.4X", uint16(v)) }
-func (v Lit) isInstruction() {}
+func (v Lit) Value() uint16  { return uint16(v) }
 
 // Jump is an unconditional branch
 type Jump uint16
 
 func newJump(v uint16) Jump   { return Jump(v &^ uint16(7<<13)) }
 func (v Jump) String() string { return fmt.Sprintf("UBRANCH %0.4X", uint16(v<<1)) }
-func (v Jump) isInstruction() {}
+func (v Jump) Value() uint16  { return uint16(v) }
 
 // Cond is a conditional branch
 type Cond uint16
 
 func newCond(v uint16) Cond   { return Cond(v &^ uint16(7<<13)) }
 func (v Cond) String() string { return fmt.Sprintf("0BRANCH %0.4X", uint16(v<<1)) }
-func (v Cond) isInstruction() {}
+func (v Cond) Value() uint16  { return uint16(v) }
 
 // Call procedure
 type Call uint16
 
 func newCall(v uint16) Call   { return Call(v &^ uint16(7<<13)) }
 func (v Call) String() string { return fmt.Sprintf("CALL %0.4X", uint16(v<<1)) }
-func (v Call) isInstruction() {}
+func (v Call) Value() uint16  { return uint16(v) }
 
 // ALU instruction
 type ALU struct {
@@ -75,7 +76,24 @@ func newALU(v uint16) ALU {
 	}
 }
 
-func (v ALU) isInstruction() {}
+func (v ALU) Value() uint16 {
+	ret := v.Opcode << 8
+	if v.RtoPC {
+		ret |= 1 << 12
+	}
+	if v.TtoN {
+		ret |= 1 << 7
+	}
+	if v.TtoR {
+		ret |= 1 << 6
+	}
+	if v.NtoAtT {
+		ret |= 1 << 5
+	}
+	ret |= uint16(v.Rdir&3) << 2
+	ret |= uint16(v.Ddir & 3)
+	return ret
+}
 
 func expand(v uint16) int8 {
 	if v&2 != 0 {
