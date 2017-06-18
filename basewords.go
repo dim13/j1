@@ -1,7 +1,7 @@
 package j1
 
 var BaseWords = map[string][]ALU{
-	"noop":   {{Opcode: opN}},
+	"noop":   {{Opcode: opT}},
 	"+":      {{Opcode: opTplusN, Ddir: -1}},
 	"xor":    {{Opcode: opTxorN, Ddir: -1}},
 	"and":    {{Opcode: opTandN, Ddir: -1}},
