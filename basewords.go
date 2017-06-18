@@ -52,4 +52,7 @@ var BaseWords = map[string][]ALU{
 	"up1":   {{Opcode: opT, Ddir: 1}},
 	"down1": {{Opcode: opT, Ddir: -1}},
 	"copy":  {{Opcode: opN}},
+
+	// misc
+	"swapdown": {{Opcode: opN, TtoN: true}, {Opcode, opT, Ddir: -1}},
 }
