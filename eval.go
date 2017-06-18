@@ -16,7 +16,7 @@ type J1 struct {
 	rsp    int8           // 5 bit retrun stack pointer
 	dstack [0x20]uint16   // data stack
 	rstack [0x20]uint16   // return stack
-	memory [0x8000]uint16 // memory
+	memory [0x8000]uint16 // 0..0x3fff main memory, 0x4000 .. 0x7fff mem-mapped i/o
 }
 
 // Reset VM
