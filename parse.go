@@ -2,18 +2,24 @@ package j1
 
 import "fmt"
 
+func isLit(v uint16) bool  { return v&(1<<15) != 0 }
+func isJump(v uint16) bool { return v&(7<<13) == 0 }
+func isCond(v uint16) bool { return v&(7<<13) == 1<<13 }
+func isCall(v uint16) bool { return v&(7<<13) == 2<<13 }
+func isALU(v uint16) bool  { return v&(7<<13) == 3<<13 }
+
 // Decode instruction
 func Decode(v uint16) Instruction {
 	switch {
-	case v&(1<<15) != 0:
+	case isLit(v):
 		return ParseLit(v)
-	case v&(7<<13) == 0:
+	case isJump(v):
 		return ParseJump(v)
-	case v&(7<<13) == 1<<13:
+	case isCond(v):
 		return ParseCond(v)
-	case v&(7<<13) == 2<<13:
+	case isCall(v):
 		return ParseCall(v)
-	case v&(7<<13) == 3<<13:
+	case isALU(v):
 		return ParseALU(v)
 	}
 	return nil
