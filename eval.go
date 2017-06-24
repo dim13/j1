@@ -21,10 +21,7 @@ type J1 struct {
 
 // Reset VM
 func (j1 *J1) Reset() {
-	j1.pc = 0
-	j1.st0 = 0
-	j1.dsp = 0
-	j1.rsp = 0
+	j1.pc, j1.st0, j1.dsp, j1.rsp = 0, 0, 0, 0
 }
 
 // LoadBytes into memory
