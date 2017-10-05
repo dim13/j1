@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io/ioutil"
-	"time"
 )
 
 // J1 Forth processor VM
@@ -44,18 +43,13 @@ func (j1 *J1) LoadFile(fname string) error {
 
 // Eval evaluates content of memory
 func (j1 *J1) Eval() {
-	var cycle int
-	ticker := time.NewTicker(time.Second / 10)
-	defer ticker.Stop()
-	for range ticker.C {
-		cycle++
+	for n := 0; ; n++ {
 		ins := Decode(j1.memory[j1.pc])
 		if ins == Jump(0) {
 			return
 		}
 		j1.eval(ins)
-		fmt.Printf("%4d %v\n", cycle, ins)
-		fmt.Printf("%v\n", j1)
+		fmt.Printf("%4d %v\n%v\n", n, ins, j1)
 	}
 }
 
