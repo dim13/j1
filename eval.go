@@ -105,6 +105,13 @@ func (j1 *J1) eval(ins Instruction) {
 	}
 }
 
+func bool2int(b bool) uint16 {
+	if b {
+		return 1
+	}
+	return 0
+}
+
 func (j1 *J1) newST0(opcode uint16) uint16 {
 	T, N, R := j1.st0, j1.dstack[j1.dsp], j1.rstack[j1.rsp]
 	switch opcode {
@@ -123,15 +130,9 @@ func (j1 *J1) newST0(opcode uint16) uint16 {
 	case opNotT: // ~T
 		return ^T
 	case opNeqT: // N==T
-		if N == T {
-			return 1
-		}
-		return 0
+		return bool2int(N == T)
 	case opNleT: // N<T
-		if int16(N) < int16(T) {
-			return 1
-		}
-		return 0
+		return bool2int(int16(N) < int16(T))
 	case opNrshiftT: // N>>T
 		return N >> (T & 0xf)
 	case opTminus1: // T-1
@@ -145,10 +146,7 @@ func (j1 *J1) newST0(opcode uint16) uint16 {
 	case opDepth: // depth (dsp)
 		return (uint16(j1.rsp) << 8) | uint16(j1.dsp)
 	case opNuleT: // Nu<T
-		if N < T {
-			return 1
-		}
-		return 0
+		return bool2int(N < T)
 	default:
 		panic("invalid instruction")
 	}
