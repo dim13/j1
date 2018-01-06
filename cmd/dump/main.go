@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	body, err := ReadBin("testdata/j1.bin")
+	body, err := ReadBin("testdata/j1e.bin")
 	if err != nil {
 		panic(err)
 	}
