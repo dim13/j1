@@ -141,7 +141,7 @@ func TestNextST0(t *testing.T) {
 		{ins: ALU{Opcode: opNrshiftT}, st0: 0x3f, state: J1{st0: 0x02, dstack: [0x20]uint16{0, 0xaa, 0xff}, dsp: 2}},
 		{ins: ALU{Opcode: opTminus1}, st0: 0x54, state: J1{st0: 0x55}},
 		{ins: ALU{Opcode: opR}, st0: 0x5, state: J1{rstack: [0x20]uint16{0, 0x05}, rsp: 1}},
-		{ins: ALU{Opcode: opAtT}, st0: 0x0, state: J1{st0: 0x01, memory: [0x4000]uint16{0, 5, 10}}},
+		{ins: ALU{Opcode: opAtT}, st0: 0x5, state: J1{st0: 0x02, memory: [0x4000]uint16{0, 5, 10}}},
 		{ins: ALU{Opcode: opNlshiftT}, st0: 0x3fc, state: J1{st0: 0x02, dstack: [0x20]uint16{0, 0xaa, 0xff}, dsp: 2}},
 		{ins: ALU{Opcode: opDepth}, st0: 0x305, state: J1{rsp: 3, dsp: 5}},
 		{ins: ALU{Opcode: opNuleT}, st0: 0xffff, state: J1{st0: 0xff, dstack: [0x20]uint16{0, 0xaa, 0xbb}, dsp: 2}},
