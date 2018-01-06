@@ -5,6 +5,28 @@ import (
 	"testing"
 )
 
+func cmp(t *testing.T, got, want J1) {
+	t.Helper()
+	if got.pc != want.pc {
+		t.Errorf("pc: got %0.4X, want %0.4X", got.pc, want.pc)
+	}
+	if got.st0 != want.st0 {
+		t.Errorf("st0: got %0.4X, want %0.4X", got.st0, want.st0)
+	}
+	if got.dsp != want.dsp {
+		t.Errorf("dsp: got %0.4X, want %0.4X", got.dsp, want.dsp)
+	}
+	if got.rsp != want.rsp {
+		t.Errorf("rsp: got %0.4X, want %0.4X", got.rsp, want.rsp)
+	}
+	if got.dstack != want.dstack {
+		t.Errorf("dstack: got %0.4X, want %0.4X", got.dstack, want.dstack)
+	}
+	if got.rstack != want.rstack {
+		t.Errorf("rstack: got %0.4X, want %0.4X", got.rstack, want.rstack)
+	}
+}
+
 func TestEval(t *testing.T) {
 	testCases := []struct {
 		ins []Instruction
@@ -94,11 +116,7 @@ func TestEval(t *testing.T) {
 			for _, ins := range tc.ins {
 				state.eval(ins)
 			}
-			if *state != tc.end {
-				t.Logf("D=%v", state.dstack)
-				t.Logf("R=%v", state.rstack)
-				t.Errorf("got %v, want %v", state, &tc.end)
-			}
+			cmp(t, *state, tc.end)
 		})
 	}
 }
