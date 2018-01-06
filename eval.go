@@ -4,18 +4,30 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"os"
 )
+
+type Console struct {
+	io.Reader
+	io.Writer
+}
 
 // J1 Forth processor VM
 type J1 struct {
-	pc     uint16         // 13 bit
-	st0    uint16         // top of data stack
-	dsp    int8           // 5 bit data stack pointer
-	rsp    int8           // 5 bit retrun stack pointer
-	dstack [0x20]uint16   // data stack
-	rstack [0x20]uint16   // return stack
-	memory [0x8000]uint16 // 0..0x3fff main memory, 0x4000 .. 0x7fff mem-mapped i/o
+	pc      uint16         // 13 bit
+	st0     uint16         // top of data stack
+	dsp     int8           // 5 bit data stack pointer
+	rsp     int8           // 5 bit retrun stack pointer
+	dstack  [0x20]uint16   // data stack
+	rstack  [0x20]uint16   // return stack
+	memory  [0x8000]uint16 // 0..0x3fff main memory, 0x4000 .. 0x7fff mem-mapped i/o
+	console io.ReadWriter
+}
+
+func New() *J1 {
+	return &J1{console: Console{Reader: os.Stdin, Writer: os.Stdout}}
 }
 
 // Reset VM
@@ -29,7 +41,7 @@ func (j1 *J1) LoadBytes(data []byte) error {
 	if size > len(j1.memory) {
 		return fmt.Errorf("too big")
 	}
-	return binary.Read(bytes.NewReader(data), binary.BigEndian, j1.memory[:size])
+	return binary.Read(bytes.NewReader(data), binary.LittleEndian, j1.memory[:size])
 }
 
 // LoadFile into memory
@@ -65,9 +77,9 @@ func (j1 *J1) String() string {
 }
 
 func (j1 *J1) eval(ins Instruction) {
+	j1.pc++
 	switch v := ins.(type) {
 	case Lit:
-		j1.pc++
 		j1.dsp++
 		j1.dstack[j1.dsp] = j1.st0
 		j1.st0 = v.Value()
@@ -75,31 +87,36 @@ func (j1 *J1) eval(ins Instruction) {
 		j1.pc = v.Value()
 	case Call:
 		j1.rsp++
-		j1.rstack[j1.rsp] = j1.pc + 1
+		j1.rstack[j1.rsp] = j1.pc
 		j1.pc = v.Value()
 	case Cond:
-		j1.pc++
 		if j1.st0 == 0 {
 			j1.pc = v.Value()
 		}
 		j1.st0 = j1.dstack[j1.dsp] // N
 		j1.dsp--
 	case ALU:
-		st0 := j1.newST0(v.Opcode)
-		j1.pc++
 		if v.RtoPC {
 			j1.pc = j1.rstack[j1.rsp]
 		}
-		if v.NtoAtT {
-			j1.memory[j1.st0] = j1.dstack[j1.dsp]
-		}
+		st0 := j1.newST0(v.Opcode)
 		j1.dsp += v.Ddir
 		j1.rsp += v.Rdir
+		if v.TtoN {
+			j1.dstack[j1.dsp] = j1.st0
+		}
 		if v.TtoR {
 			j1.rstack[j1.rsp] = j1.st0
 		}
-		if v.TtoN {
-			j1.dstack[j1.dsp] = j1.st0
+		if v.NtoAtT {
+			switch j1.st0 {
+			case 0xf000: // key
+				fmt.Fprintf(j1.console, "%c", j1.dstack[j1.dsp])
+			case 0xf002: // bye
+				j1.rsp = 0
+			default:
+				j1.memory[j1.st0] = j1.dstack[j1.dsp]
+			}
 		}
 		j1.st0 = st0
 	}
@@ -140,7 +157,16 @@ func (j1 *J1) newST0(opcode uint16) uint16 {
 	case opR: // R (rT)
 		return R
 	case opAtT: // [T]
-		return j1.memory[T]
+		switch T {
+		case 0xf000: // tx!
+			var b uint16
+			fmt.Fscanf(j1.console, "%c", &b)
+			return b
+		case 0xf001: // ?rx
+			return 1
+		default:
+			return j1.memory[T]
+		}
 	case opNlshiftT: // N<<T
 		return N << (T & 0xf)
 	case opDepth: // depth (dsp)
