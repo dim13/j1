@@ -6,13 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"os"
 )
-
-type Console struct {
-	io.Reader
-	io.Writer
-}
 
 // J1 Forth processor VM
 type J1 struct {
@@ -27,7 +21,7 @@ type J1 struct {
 }
 
 func New() *J1 {
-	return &J1{console: Console{Reader: os.Stdin, Writer: os.Stdout}}
+	return &J1{console: NewConsole()}
 }
 
 // Reset VM
@@ -61,45 +55,51 @@ func (j1 *J1) Eval() {
 			return
 		}
 		j1.eval(ins)
-		fmt.Printf("%4d %v\n%v\n", n, ins, j1)
+		//fmt.Printf("%4d %v %v\n", n, ins, j1)
 	}
 }
 
 func (j1 *J1) String() string {
-	var rstack [32]uint16
-	for i, v := range j1.rstack {
-		rstack[i] = v << 1
-	}
-	s := fmt.Sprintf("\tPC=%0.4X ST=%0.4X\n", j1.pc<<1, j1.st0)
+	s := fmt.Sprintf("\tPC=%0.4X ST=%0.4X\n", j1.pc, j1.st0)
 	s += fmt.Sprintf("\tD=%0.4X\n", j1.dstack[:j1.dsp+1])
-	s += fmt.Sprintf("\tR=%0.4X\n", rstack[:j1.rsp+1])
+	s += fmt.Sprintf("\tR=%0.4X", j1.rstack[:j1.rsp+1])
 	return s
+}
+
+func (j1 *J1) push(v uint16) {
+	j1.dsp++
+	j1.dstack[j1.dsp] = j1.st0
+	j1.st0 = v
+}
+
+func (j1 *J1) pop() uint16 {
+	v := j1.st0
+	j1.st0 = j1.dstack[j1.dsp]
+	j1.dsp--
+	return v
 }
 
 func (j1 *J1) eval(ins Instruction) {
 	j1.pc++
 	switch v := ins.(type) {
 	case Lit:
-		j1.dsp++
-		j1.dstack[j1.dsp] = j1.st0
-		j1.st0 = v.Value()
+		j1.push(v.Value())
 	case Jump:
 		j1.pc = v.Value()
 	case Call:
 		j1.rsp++
-		j1.rstack[j1.rsp] = j1.pc
+		j1.rstack[j1.rsp] = j1.pc << 1
 		j1.pc = v.Value()
 	case Cond:
-		if j1.st0 == 0 {
+		if j1.pop() == 0 {
 			j1.pc = v.Value()
 		}
-		j1.st0 = j1.dstack[j1.dsp] // N
-		j1.dsp--
 	case ALU:
 		if v.RtoPC {
-			j1.pc = j1.rstack[j1.rsp]
+			j1.pc = j1.rstack[j1.rsp] >> 1
 		}
 		st0 := j1.newST0(v.Opcode)
+		n := j1.dstack[j1.dsp]
 		j1.dsp += v.Ddir
 		j1.rsp += v.Rdir
 		if v.TtoN {
@@ -111,11 +111,11 @@ func (j1 *J1) eval(ins Instruction) {
 		if v.NtoAtT {
 			switch j1.st0 {
 			case 0xf000: // key
-				fmt.Fprintf(j1.console, "%c", j1.dstack[j1.dsp])
+				fmt.Fprintf(j1.console, "%c", n)
 			case 0xf002: // bye
 				j1.rsp = 0
 			default:
-				j1.memory[j1.st0] = j1.dstack[j1.dsp]
+				j1.memory[j1.st0>>1] = n
 			}
 		}
 		j1.st0 = st0
@@ -124,7 +124,7 @@ func (j1 *J1) eval(ins Instruction) {
 
 func bool2int(b bool) uint16 {
 	if b {
-		return 1
+		return ^uint16(0)
 	}
 	return 0
 }
@@ -165,7 +165,7 @@ func (j1 *J1) newST0(opcode uint16) uint16 {
 		case 0xf001: // ?rx
 			return 1
 		default:
-			return j1.memory[T]
+			return j1.memory[T>>1]
 		}
 	case opNlshiftT: // N<<T
 		return N << (T & 0xf)
