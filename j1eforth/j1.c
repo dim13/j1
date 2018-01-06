@@ -1,4 +1,3 @@
-#include <pcap.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -28,33 +27,6 @@ int putch(int c) { /* output character to sstdout & flush */
 }
 #endif
 int len = 0;
-static pcap_t* handle = NULL;
-static void pcapdev_init(void) {
-    char errbuf[PCAP_ERRBUF_SIZE];
-    pcap_if_t* devices;
-    if (pcap_findalldevs(&devices, errbuf) == -1) {
-        fprintf(stderr, "error pcap_findalldevs: %s\n", errbuf);
-        return;
-    }
-    pcap_if_t* device;
-    for(device = devices; device; device = device->next) {
-        if (device->description) {
-            printf(" (%s)\n", device->description);
-        }
-        else {
-            fprintf(stderr, "no device\n");
-            return;
-        }
-    }
-    device = devices->next->next;
-    if (NULL == (handle= pcap_open_live(device->name
-			, 65536, 1, 10 , errbuf))) {
-        fprintf(stderr, "\nUnable to open the adapter. %s is not supported by WinPcap\n");
-        pcap_freealldevs(devices);
-        return;
-    }
-    pcap_freealldevs(devices);
-}
 static unsigned short t;
 static unsigned short s;
 static unsigned short d[0x20]; /* data stack */
@@ -78,31 +50,11 @@ static int pop(void) // pop value from the data stack and return it
   dsp = 0x1f & (dsp - 1);
   return v;
 }
-char eth_poll() {
-    const u_char* packet;
-    struct pcap_pkthdr* header;
-    int res = 0;
-    while (res == 0)
-    {
-        res = pcap_next_ex(handle, &header, &packet);
-    }
-    len = (int)header->len;
-    memcpy(&memory[0x2000], packet, len);
-	return len;
-}
-void eth_transmit(void) {
-  if ((pcap_sendpacket(handle, (char *)(&memory[0x2000]), len) == -1))
-  {
-      printf("sorry send error\n");
-      exit(1);
-  }
-}
 
 static void execute(int entrypoint)
 {
   int _pc, _t;
   int insn = 0x4000 | entrypoint; // first insn: "call entrypoint"
-  pcapdev_init();
   do {
     _pc = pc + 1;
     if (insn & 0x8000) { // literal
@@ -140,7 +92,7 @@ static void execute(int entrypoint)
         case 9:   _t = s>>t; break; /* rshift */
         case 0xa:  _t = t-1; break; /* 1- */
         case 0xb:  _t = r[rsp];  break; /* r@ */
-        case 0xc:  _t = (t==0xf008)?eth_poll():(t==0xf001)?1:(t==0xf000)?getch():memory[t>>1]; break; /* @ */
+        case 0xc:  _t = (t==0xf001)?1:(t==0xf000)?getch():memory[t>>1]; break; /* @ */
         case 0xd:  _t = s<<t; break; /* lshift */
         case 0xe:  _t = (rsp<<8) + dsp; break; /* dsp */
         case 0xf:  _t = -(s<t); break; /* u< */
@@ -152,7 +104,7 @@ static void execute(int entrypoint)
         if (insn & 0x40) /* t->r */
            r[rsp] = t;
         if (insn & 0x20) /* s->[t] */
-          (t==0xf008)?eth_transmit(): (t==0xf002)?(rsp=0):(t==0xf000)?putch(s):(memory[t>>1]=s); /* ! */
+           (t==0xf002)?(rsp=0):(t==0xf000)?putch(s):(memory[t>>1]=s); /* ! */
 		t = _t;
         break;
       }
