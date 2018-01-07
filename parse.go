@@ -2,25 +2,19 @@ package j1
 
 import "fmt"
 
-func isLit(v uint16) bool  { return v&(1<<15) != 0 }
-func isJump(v uint16) bool { return v&(7<<13) == 0 }
-func isCond(v uint16) bool { return v&(7<<13) == 1<<13 }
-func isCall(v uint16) bool { return v&(7<<13) == 2<<13 }
-func isALU(v uint16) bool  { return v&(7<<13) == 3<<13 }
-
 // Decode instruction
 func Decode(v uint16) Instruction {
 	switch {
-	case isLit(v):
-		return ParseLit(v)
-	case isJump(v):
-		return ParseJump(v)
-	case isCond(v):
-		return ParseCond(v)
-	case isCall(v):
-		return ParseCall(v)
-	case isALU(v):
-		return ParseALU(v)
+	case v&(1<<15) != 0:
+		return newLit(v)
+	case v&(7<<13) == 0:
+		return newJump(v)
+	case v&(7<<13) == 1<<13:
+		return newCond(v)
+	case v&(7<<13) == 2<<13:
+		return newCall(v)
+	case v&(7<<13) == 3<<13:
+		return newALU(v)
 	}
 	return nil
 }
@@ -35,7 +29,7 @@ type Instruction interface {
 // Lit is a literal
 type Lit uint16
 
-func ParseLit(v uint16) Lit   { return Lit(v &^ uint16(1<<15)) }
+func newLit(v uint16) Lit     { return Lit(v &^ uint16(1<<15)) }
 func (v Lit) String() string  { return fmt.Sprintf("LIT %0.4X", uint16(v)) }
 func (v Lit) Value() uint16   { return uint16(v) }
 func (v Lit) Compile() uint16 { return v.Value() | (1 << 15) }
@@ -43,7 +37,7 @@ func (v Lit) Compile() uint16 { return v.Value() | (1 << 15) }
 // Jump is an unconditional branch
 type Jump uint16
 
-func ParseJump(v uint16) Jump  { return Jump(v &^ uint16(7<<13)) }
+func newJump(v uint16) Jump    { return Jump(v &^ uint16(7<<13)) }
 func (v Jump) String() string  { return fmt.Sprintf("UBRANCH %0.4X", uint16(v<<1)) }
 func (v Jump) Value() uint16   { return uint16(v) }
 func (v Jump) Compile() uint16 { return v.Value() }
@@ -51,7 +45,7 @@ func (v Jump) Compile() uint16 { return v.Value() }
 // Cond is a conditional branch
 type Cond uint16
 
-func ParseCond(v uint16) Cond  { return Cond(v &^ uint16(7<<13)) }
+func newCond(v uint16) Cond    { return Cond(v &^ uint16(7<<13)) }
 func (v Cond) String() string  { return fmt.Sprintf("0BRANCH %0.4X", uint16(v<<1)) }
 func (v Cond) Value() uint16   { return uint16(v) }
 func (v Cond) Compile() uint16 { return v.Value() | (1 << 13) }
@@ -59,7 +53,7 @@ func (v Cond) Compile() uint16 { return v.Value() | (1 << 13) }
 // Call procedure
 type Call uint16
 
-func ParseCall(v uint16) Call  { return Call(v &^ uint16(7<<13)) }
+func newCall(v uint16) Call    { return Call(v &^ uint16(7<<13)) }
 func (v Call) String() string  { return fmt.Sprintf("CALL %0.4X", uint16(v<<1)) }
 func (v Call) Value() uint16   { return uint16(v) }
 func (v Call) Compile() uint16 { return v.Value() | (2 << 13) }
@@ -75,7 +69,7 @@ type ALU struct {
 	Ddir   int8
 }
 
-func ParseALU(v uint16) ALU {
+func newALU(v uint16) ALU {
 	return ALU{
 		Opcode: (v >> 8) & 15,
 		RtoPC:  v&(1<<12) != 0,
