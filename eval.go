@@ -130,6 +130,12 @@ func bool2int(b bool) uint16 {
 }
 
 func (j1 *J1) newST0(opcode uint16) uint16 {
+	if j1.dsp < 0 {
+		j1.dsp = 0
+	}
+	if j1.rsp < 0 {
+		j1.rsp = 0
+	}
 	T, N, R := j1.st0, j1.dstack[j1.dsp], j1.rstack[j1.rsp]
 	switch opcode {
 	case opT: // T
