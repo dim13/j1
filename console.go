@@ -19,8 +19,11 @@ func NewConsole() *Console {
 
 func (c *Console) Read(p []byte) (int, error) {
 	n, err := c.r.Read(p)
-	if n > 0 && p[0] == 10 {
-		p[0] = 13
+	for i, v := range p {
+		// replace nl with cr
+		if v == 10 {
+			p[i] = 13
+		}
 	}
 	return n, err
 }
