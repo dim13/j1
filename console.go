@@ -1,19 +1,19 @@
 package j1
 
 import (
-	"bufio"
+	"io"
 	"os"
 )
 
 type Console struct {
-	r *bufio.Reader
-	w *bufio.Writer
+	r io.Reader
+	w io.Writer
 }
 
 func NewConsole() *Console {
 	return &Console{
-		r: bufio.NewReader(os.Stdin),
-		w: bufio.NewWriter(os.Stdout),
+		r: os.Stdin,
+		w: os.Stdout,
 	}
 }
 
@@ -26,9 +26,5 @@ func (c *Console) Read(p []byte) (int, error) {
 }
 
 func (c *Console) Write(p []byte) (int, error) {
-	n, err := c.w.Write(p)
-	if err != nil {
-		return 0, err
-	}
-	return n, c.w.Flush()
+	return c.w.Write(p)
 }
