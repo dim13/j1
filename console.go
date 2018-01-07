@@ -18,7 +18,11 @@ func NewConsole() *Console {
 }
 
 func (c *Console) Read(p []byte) (int, error) {
-	return c.r.Read(p)
+	n, err := c.r.Read(p)
+	if n > 0 && p[0] == 10 {
+		p[0] = 13
+	}
+	return n, err
 }
 
 func (c *Console) Write(p []byte) (int, error) {

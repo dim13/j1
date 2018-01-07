@@ -53,6 +53,8 @@ static int pop(void) // pop value from the data stack and return it
 
 static void execute(int entrypoint)
 {
+	int i = 0;
+	int j = 0;
   int _pc, _t;
   int insn = 0x4000 | entrypoint; // first insn: "call entrypoint"
   do {
@@ -92,7 +94,12 @@ static void execute(int entrypoint)
         case 9:   _t = s>>t; break; /* rshift */
         case 0xa:  _t = t-1; break; /* 1- */
         case 0xb:  _t = r[rsp];  break; /* r@ */
-        case 0xc:  _t = (t==0xf001)?1:(t==0xf000)?getch():memory[t>>1]; break; /* @ */
+        case 0xc:  switch (t) {
+		   case 0xf001: _t = 1; break;
+		   case 0xf000: _t = getch(); break;
+		   default: _t = memory[t>>1]; break;
+		   }
+		   break; /* @ */
         case 0xd:  _t = s<<t; break; /* lshift */
         case 0xe:  _t = (rsp<<8) + dsp; break; /* dsp */
         case 0xf:  _t = -(s<t); break; /* u< */
@@ -104,13 +111,30 @@ static void execute(int entrypoint)
         if (insn & 0x40) /* t->r */
            r[rsp] = t;
         if (insn & 0x20) /* s->[t] */
-           (t==0xf002)?(rsp=0):(t==0xf000)?putch(s):(memory[t>>1]=s); /* ! */
+		switch (t) {
+		case 0xf002: rsp = 0; break;
+		case 0xf000: putch(s); break;
+		default: memory[t>>1]=s; break; /* ! */
+		}
 		t = _t;
         break;
       }
     }
     pc = _pc;
     insn = memory[pc];
+#if DEBUG
+    printf("%d: pc: %0.4x; sp: %0.4x\n", i, pc, t);
+    printf("\td:");
+    for (j = 0; j < dsp; j++) {
+	    printf(" %0.4x", d[j]);
+    }
+    printf("\n\tr:");
+    for (j = 0; j < rsp; j++) {
+	    printf(" %0.4x", r[j]);
+    }
+    printf("\n");
+#endif
+    i++;
   } while (1);
 }
 /* end of cpu */

@@ -55,14 +55,14 @@ func (j1 *J1) Eval() {
 			return
 		}
 		j1.eval(ins)
-		//fmt.Printf("%4d %v %v\n", n, ins, j1)
+		//fmt.Printf("%4d %v\n%v", n, ins, j1)
 	}
 }
 
 func (j1 *J1) String() string {
 	s := fmt.Sprintf("\tPC=%0.4X ST=%0.4X\n", j1.pc, j1.st0)
 	s += fmt.Sprintf("\tD=%0.4X\n", j1.dstack[:j1.dsp+1])
-	s += fmt.Sprintf("\tR=%0.4X", j1.rstack[:j1.rsp+1])
+	s += fmt.Sprintf("\tR=%0.4X\n", j1.rstack[:j1.rsp+1])
 	return s
 }
 
