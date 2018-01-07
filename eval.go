@@ -113,7 +113,7 @@ func (j1 *J1) eval(ins Instruction) {
 			case 0xf000: // key
 				fmt.Fprintf(j1.console, "%c", n)
 			case 0xf002: // bye
-				j1.rsp = 0
+				j1.Reset()
 			default:
 				j1.memory[j1.st0>>1] = n
 			}
