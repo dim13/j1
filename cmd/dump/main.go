@@ -31,7 +31,7 @@ func ReadBin(fname string) ([]uint16, error) {
 	}
 	size := stat.Size()
 	body := make([]uint16, int(size)/2)
-	if err := binary.Read(fd, binary.BigEndian, &body); err != nil {
+	if err := binary.Read(fd, binary.LittleEndian, &body); err != nil {
 		return nil, err
 	}
 	return body, nil
