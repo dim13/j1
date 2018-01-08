@@ -79,6 +79,30 @@ func (j1 *J1) pop() uint16 {
 	return v
 }
 
+func (j1 *J1) write(addr, value uint16) {
+	switch addr {
+	case 0xf000: // key
+		fmt.Fprintf(j1.console, "%c", value)
+	case 0xf002: // bye
+		j1.Reset()
+	default:
+		j1.memory[addr>>1] = value
+	}
+}
+
+func (j1 *J1) read(addr uint16) uint16 {
+	switch addr {
+	case 0xf000: // tx!
+		var b uint16
+		fmt.Fscanf(j1.console, "%c", &b)
+		return b
+	case 0xf001: // ?rx
+		return 1
+	default:
+		return j1.memory[addr>>1]
+	}
+}
+
 func (j1 *J1) eval(ins Instruction) {
 	j1.pc++
 	switch v := ins.(type) {
@@ -98,8 +122,10 @@ func (j1 *J1) eval(ins Instruction) {
 		if v.RtoPC {
 			j1.pc = j1.rstack[j1.rsp] >> 1
 		}
+		if v.NtoAtT {
+			j1.write(j1.st0, j1.dstack[j1.dsp])
+		}
 		st0 := j1.newST0(v.Opcode)
-		n := j1.dstack[j1.dsp]
 		j1.dsp += v.Ddir
 		j1.rsp += v.Rdir
 		if v.TtoN {
@@ -107,16 +133,6 @@ func (j1 *J1) eval(ins Instruction) {
 		}
 		if v.TtoR {
 			j1.rstack[j1.rsp] = j1.st0
-		}
-		if v.NtoAtT {
-			switch j1.st0 {
-			case 0xf000: // key
-				fmt.Fprintf(j1.console, "%c", n)
-			case 0xf002: // bye
-				j1.Reset()
-			default:
-				j1.memory[j1.st0>>1] = n
-			}
 		}
 		j1.st0 = st0
 	}
@@ -163,16 +179,7 @@ func (j1 *J1) newST0(opcode uint16) uint16 {
 	case opR: // R (rT)
 		return R
 	case opAtT: // [T]
-		switch T {
-		case 0xf000: // tx!
-			var b uint16
-			fmt.Fscanf(j1.console, "%c", &b)
-			return b
-		case 0xf001: // ?rx
-			return 1
-		default:
-			return j1.memory[T>>1]
-		}
+		return j1.read(T)
 	case opNlshiftT: // N<<T
 		return N << (T & 0xf)
 	case opDepth: // depth (dsp)

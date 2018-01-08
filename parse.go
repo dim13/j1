@@ -22,6 +22,7 @@ func Decode(v uint16) Instruction {
 // Instruction interface
 type Instruction interface {
 	Value() uint16
+	Compile() uint16
 }
 
 // Lit is a literal
