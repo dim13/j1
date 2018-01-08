@@ -504,7 +504,7 @@ t: key ( -- c )
     begin
      ?key
 	until f000 literal @ t;
-t: nuf? ( -- t ) ?key dup if drop key =cr literal = then exit t;
+t: nuf? ( -- t ) ?key dup if drop key =lf literal = then exit t;
 t: space ( -- ) bl emit t;
 t: spaces ( +n -- ) 0 literal max  for aft space then next t;
 t: type ( b u -- ) for aft count emit then next drop t;
@@ -580,7 +580,7 @@ t: ^h ( bot eot cur -- bot eot cur )
 t: tap ( bot eot cur c -- bot eot cur )
    dup emit over c! 1+ t;
 t: ktap ( bot eot cur c -- bot eot cur )
-   dup =cr literal xor if
+   dup =lf literal xor if
     =bksp literal xor if
      bl tap exit
     then ^h exit
