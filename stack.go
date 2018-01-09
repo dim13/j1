@@ -15,11 +15,12 @@ func (s *stack) push(v uint16) {
 }
 
 func (s *stack) pop() uint16 {
-	defer s.move(-1)
-	return s.peek()
+	v := s.get()
+	s.move(-1)
+	return v
 }
 
-func (s *stack) peek() uint16 {
+func (s *stack) get() uint16 {
 	return s.data[s.sp]
 }
 

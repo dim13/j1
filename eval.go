@@ -15,11 +15,11 @@ const (
 
 // J1 Forth processor VM
 type J1 struct {
-	pc      uint16 // 13 bit
-	st0     uint16 // top of data stack
+	memory  [memSize]uint16 // 0..0x3fff main memory, 0x4000 .. 0x7fff mem-mapped i/o
+	pc      uint16          // 13 bit
+	st0     uint16          // top of data stack
 	d       stack
 	r       stack
-	memory  [memSize]uint16 // 0..0x3fff main memory, 0x4000 .. 0x7fff mem-mapped i/o
 	console io.ReadWriter
 }
 
@@ -124,10 +124,10 @@ func (j1 *J1) eval(ins Instruction) {
 		}
 	case ALU:
 		if v.RtoPC {
-			j1.pc = j1.r.peek() >> 1
+			j1.pc = j1.r.get() >> 1
 		}
 		if v.NtoAtT {
-			j1.write(j1.st0, j1.d.peek())
+			j1.write(j1.st0, j1.d.get())
 		}
 		st0 := j1.newST0(v.Opcode)
 		j1.d.move(v.Ddir)
@@ -150,7 +150,7 @@ func bool2int(b bool) uint16 {
 }
 
 func (j1 *J1) newST0(opcode uint16) uint16 {
-	T, N, R := j1.st0, j1.d.peek(), j1.r.peek()
+	T, N, R := j1.st0, j1.d.get(), j1.r.get()
 	switch opcode {
 	case opT: // T
 		return T
