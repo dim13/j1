@@ -8,15 +8,18 @@ import (
 	"io/ioutil"
 )
 
+const (
+	memSize   = 0x4000
+	stackSize = 0x20
+)
+
 // J1 Forth processor VM
 type J1 struct {
-	pc      uint16         // 13 bit
-	st0     uint16         // top of data stack
-	dsp     int8           // 5 bit data stack pointer
-	rsp     int8           // 5 bit retrun stack pointer
-	dstack  [0x20]uint16   // data stack
-	rstack  [0x20]uint16   // return stack
-	memory  [0x4000]uint16 // 0..0x3fff main memory, 0x4000 .. 0x7fff mem-mapped i/o
+	pc      uint16 // 13 bit
+	st0     uint16 // top of data stack
+	d       stack
+	r       stack
+	memory  [memSize]uint16 // 0..0x3fff main memory, 0x4000 .. 0x7fff mem-mapped i/o
 	console io.ReadWriter
 }
 
@@ -26,13 +29,13 @@ func New() *J1 {
 
 // Reset VM
 func (j1 *J1) Reset() {
-	j1.pc, j1.st0, j1.dsp, j1.rsp = 0, 0, 0, 0
+	j1.pc, j1.st0, j1.d.sp, j1.r.sp = 0, 0, 0, 0
 }
 
 // LoadBytes into memory
 func (j1 *J1) LoadBytes(data []byte) error {
 	size := len(data) >> 1
-	if size > len(j1.memory) {
+	if size >= memSize {
 		return fmt.Errorf("too big")
 	}
 	return binary.Read(bytes.NewReader(data), binary.LittleEndian, j1.memory[:size])
@@ -61,36 +64,38 @@ func (j1 *J1) Eval() {
 
 func (j1 *J1) String() string {
 	s := fmt.Sprintf("\tPC=%0.4X ST=%0.4X\n", j1.pc, j1.st0)
-	s += fmt.Sprintf("\tD=%0.4X\n", j1.dstack[:j1.dsp+1])
-	s += fmt.Sprintf("\tR=%0.4X\n", j1.rstack[:j1.rsp+1])
+	s += fmt.Sprintf("\tD=%0.4X\n", j1.d.dump())
+	s += fmt.Sprintf("\tR=%0.4X\n", j1.r.dump())
 	return s
 }
 
 func (j1 *J1) push(v uint16) {
-	j1.dsp++
-	j1.dstack[j1.dsp] = j1.st0
+	j1.d.push(j1.st0)
 	j1.st0 = v
 }
 
 func (j1 *J1) pop() uint16 {
 	v := j1.st0
-	j1.st0 = j1.dstack[j1.dsp]
-	j1.dsp--
+	j1.st0 = j1.d.pop()
 	return v
 }
 
 func (j1 *J1) write(addr, value uint16) {
+	if off := int(addr >> 1); off < memSize {
+		j1.memory[addr>>1] = value
+	}
 	switch addr {
 	case 0xf000: // key
 		fmt.Fprintf(j1.console, "%c", value)
 	case 0xf002: // bye
 		j1.Reset()
-	default:
-		j1.memory[addr>>1] = value
 	}
 }
 
 func (j1 *J1) read(addr uint16) uint16 {
+	if off := int(addr >> 1); off < memSize {
+		return j1.memory[off]
+	}
 	switch addr {
 	case 0xf000: // tx!
 		var b uint16
@@ -99,7 +104,7 @@ func (j1 *J1) read(addr uint16) uint16 {
 	case 0xf001: // ?rx
 		return 1
 	default:
-		return j1.memory[addr>>1]
+		return 0
 	}
 }
 
@@ -111,8 +116,7 @@ func (j1 *J1) eval(ins Instruction) {
 	case Jump:
 		j1.pc = v.Value()
 	case Call:
-		j1.rsp++
-		j1.rstack[j1.rsp] = j1.pc << 1
+		j1.r.push(j1.pc << 1)
 		j1.pc = v.Value()
 	case Cond:
 		if j1.pop() == 0 {
@@ -120,19 +124,19 @@ func (j1 *J1) eval(ins Instruction) {
 		}
 	case ALU:
 		if v.RtoPC {
-			j1.pc = j1.rstack[j1.rsp] >> 1
+			j1.pc = j1.r.peek() >> 1
 		}
 		if v.NtoAtT {
-			j1.write(j1.st0, j1.dstack[j1.dsp])
+			j1.write(j1.st0, j1.d.peek())
 		}
 		st0 := j1.newST0(v.Opcode)
-		j1.dsp += v.Ddir
-		j1.rsp += v.Rdir
+		j1.d.move(v.Ddir)
+		j1.r.move(v.Rdir)
 		if v.TtoN {
-			j1.dstack[j1.dsp] = j1.st0
+			j1.d.set(j1.st0)
 		}
 		if v.TtoR {
-			j1.rstack[j1.rsp] = j1.st0
+			j1.r.set(j1.st0)
 		}
 		j1.st0 = st0
 	}
@@ -146,13 +150,7 @@ func bool2int(b bool) uint16 {
 }
 
 func (j1 *J1) newST0(opcode uint16) uint16 {
-	if j1.dsp < 0 {
-		j1.dsp = 0
-	}
-	if j1.rsp < 0 {
-		j1.rsp = 0
-	}
-	T, N, R := j1.st0, j1.dstack[j1.dsp], j1.rstack[j1.rsp]
+	T, N, R := j1.st0, j1.d.peek(), j1.r.peek()
 	switch opcode {
 	case opT: // T
 		return T
@@ -183,7 +181,7 @@ func (j1 *J1) newST0(opcode uint16) uint16 {
 	case opNlshiftT: // N<<T
 		return N << (T & 0xf)
 	case opDepth: // depth (dsp)
-		return (uint16(j1.rsp) << 8) | uint16(j1.dsp)
+		return (j1.r.depth() << 8) | j1.d.depth()
 	case opNuleT: // Nu<T
 		return bool2int(N < T)
 	default:
