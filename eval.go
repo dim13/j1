@@ -51,7 +51,9 @@ func (j1 *J1) LoadFile(fname string) error {
 // Eval evaluates content of memory
 func (j1 *J1) Eval() {
 	for !j1.done {
-		j1.eval(Decode(j1.memory[j1.pc]))
+		ins := Decode(j1.memory[j1.pc])
+		//fmt.Printf("%v\n%v", ins, j1)
+		j1.eval(ins)
 	}
 }
 
@@ -90,7 +92,6 @@ func (j1 *J1) readAt(addr uint16) uint16 {
 }
 
 func (j1 *J1) eval(ins Instruction) {
-	//fmt.Printf("%v\n%v", ins, j1)
 	j1.pc++
 	switch v := ins.(type) {
 	case Lit:
