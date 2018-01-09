@@ -1,5 +1,7 @@
 package j1
 
+const stackSize = 0x20
+
 type stack struct {
 	data [stackSize]uint16 // stack
 	sp   int8              // 5 bit stack pointer

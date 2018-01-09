@@ -8,10 +8,7 @@ import (
 	"io/ioutil"
 )
 
-const (
-	memSize   = 0x4000
-	stackSize = 0x20
-)
+const memSize = 0x4000
 
 // J1 Forth processor VM
 type J1 struct {
