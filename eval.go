@@ -18,6 +18,7 @@ type J1 struct {
 	d       stack
 	r       stack
 	console io.ReadWriter
+	done    bool
 }
 
 func New() *J1 {
@@ -49,13 +50,8 @@ func (j1 *J1) LoadFile(fname string) error {
 
 // Eval evaluates content of memory
 func (j1 *J1) Eval() {
-	for n := 0; ; n++ {
-		ins := Decode(j1.memory[j1.pc])
-		if ins == Jump(0) {
-			return
-		}
-		j1.eval(ins)
-		//fmt.Printf("%4d %v\n%v", n, ins, j1)
+	for !j1.done {
+		j1.eval(Decode(j1.memory[j1.pc]))
 	}
 }
 
@@ -74,7 +70,7 @@ func (j1 *J1) writeAt(addr, value uint16) {
 	case 0xf000: // key
 		fmt.Fprintf(j1.console, "%c", value)
 	case 0xf002: // bye
-		j1.Reset()
+		j1.done = true
 	}
 }
 
@@ -94,6 +90,7 @@ func (j1 *J1) readAt(addr uint16) uint16 {
 }
 
 func (j1 *J1) eval(ins Instruction) {
+	//fmt.Printf("%v\n%v", ins, j1)
 	j1.pc++
 	switch v := ins.(type) {
 	case Lit:
