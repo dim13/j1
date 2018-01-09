@@ -69,18 +69,7 @@ func (j1 *J1) String() string {
 	return s
 }
 
-func (j1 *J1) push(v uint16) {
-	j1.d.push(j1.st0)
-	j1.st0 = v
-}
-
-func (j1 *J1) pop() uint16 {
-	v := j1.st0
-	j1.st0 = j1.d.pop()
-	return v
-}
-
-func (j1 *J1) write(addr, value uint16) {
+func (j1 *J1) writeAt(addr, value uint16) {
 	if off := int(addr >> 1); off < memSize {
 		j1.memory[addr>>1] = value
 	}
@@ -92,7 +81,7 @@ func (j1 *J1) write(addr, value uint16) {
 	}
 }
 
-func (j1 *J1) read(addr uint16) uint16 {
+func (j1 *J1) readAt(addr uint16) uint16 {
 	if off := int(addr >> 1); off < memSize {
 		return j1.memory[off]
 	}
@@ -103,31 +92,32 @@ func (j1 *J1) read(addr uint16) uint16 {
 		return b
 	case 0xf001: // ?rx
 		return 1
-	default:
-		return 0
 	}
+	return 0
 }
 
 func (j1 *J1) eval(ins Instruction) {
 	j1.pc++
 	switch v := ins.(type) {
 	case Lit:
-		j1.push(v.Value())
+		j1.d.push(j1.st0)
+		j1.st0 = v.Value()
 	case Jump:
 		j1.pc = v.Value()
 	case Call:
 		j1.r.push(j1.pc << 1)
 		j1.pc = v.Value()
 	case Cond:
-		if j1.pop() == 0 {
+		if j1.st0 == 0 {
 			j1.pc = v.Value()
 		}
+		j1.st0 = j1.d.pop()
 	case ALU:
 		if v.RtoPC {
 			j1.pc = j1.r.get() >> 1
 		}
 		if v.NtoAtT {
-			j1.write(j1.st0, j1.d.get())
+			j1.writeAt(j1.st0, j1.d.get())
 		}
 		st0 := j1.newST0(v.Opcode)
 		j1.d.move(v.Ddir)
@@ -140,13 +130,6 @@ func (j1 *J1) eval(ins Instruction) {
 		}
 		j1.st0 = st0
 	}
-}
-
-func bool2int(b bool) uint16 {
-	if b {
-		return ^uint16(0)
-	}
-	return 0
 }
 
 func (j1 *J1) newST0(opcode uint16) uint16 {
@@ -177,7 +160,7 @@ func (j1 *J1) newST0(opcode uint16) uint16 {
 	case opR: // R (rT)
 		return R
 	case opAtT: // [T]
-		return j1.read(T)
+		return j1.readAt(T)
 	case opNlshiftT: // N<<T
 		return N << (T & 0xf)
 	case opDepth: // depth (dsp)
@@ -187,4 +170,11 @@ func (j1 *J1) newST0(opcode uint16) uint16 {
 	default:
 		panic("invalid instruction")
 	}
+}
+
+func bool2int(b bool) uint16 {
+	if b {
+		return ^uint16(0)
+	}
+	return 0
 }
