@@ -18,11 +18,17 @@ type J1 struct {
 	d       stack
 	r       stack
 	console io.ReadWriter
-	done    bool
+	done    chan struct{}
+	in, out chan uint16
 }
 
 func New() *J1 {
-	return &J1{console: NewConsole()}
+	return &J1{
+		console: NewConsole(),
+		done:    make(chan struct{}),
+		in:      make(chan uint16, 1),
+		out:     make(chan uint16, 1),
+	}
 }
 
 // Reset VM
@@ -48,13 +54,47 @@ func (j1 *J1) LoadFile(fname string) error {
 	return j1.LoadBytes(data)
 }
 
-// Eval evaluates content of memory
-func (j1 *J1) Eval() {
-	for !j1.done {
-		ins := Decode(j1.memory[j1.pc])
-		//fmt.Printf("%v\n%v", ins, j1)
-		j1.eval(ins)
+func (j1 *J1) read() {
+	var b uint16
+	for {
+		fmt.Fscanf(j1.console, "%c", &b)
+		select {
+		case <-j1.done:
+			return
+		case j1.in <- b:
+		}
 	}
+}
+
+func (j1 *J1) write() {
+	for {
+		select {
+		case <-j1.done:
+			return
+		case b := <-j1.out:
+			fmt.Fprintf(j1.console, "%c", b)
+		}
+	}
+}
+
+func (j1 *J1) run() {
+	for {
+		select {
+		case <-j1.done:
+			return
+		default:
+			ins := Decode(j1.memory[j1.pc])
+			//fmt.Printf("%v\n%v", ins, j1)
+			j1.Eval(ins)
+		}
+	}
+}
+
+// Run evaluates content of memory
+func (j1 *J1) Run() {
+	go j1.read()
+	go j1.write()
+	j1.run()
 }
 
 func (j1 *J1) String() string {
@@ -70,9 +110,9 @@ func (j1 *J1) writeAt(addr, value uint16) {
 	}
 	switch addr {
 	case 0xf000: // key
-		fmt.Fprintf(j1.console, "%c", value)
+		j1.out <- value
 	case 0xf002: // bye
-		j1.done = true
+		close(j1.done)
 	}
 }
 
@@ -82,16 +122,14 @@ func (j1 *J1) readAt(addr uint16) uint16 {
 	}
 	switch addr {
 	case 0xf000: // tx!
-		var b uint16
-		fmt.Fscanf(j1.console, "%c", &b)
-		return b
+		return <-j1.in
 	case 0xf001: // ?rx
-		return 1
+		return uint16(len(j1.in))
 	}
 	return 0
 }
 
-func (j1 *J1) eval(ins Instruction) {
+func (j1 *J1) Eval(ins Instruction) {
 	j1.pc++
 	switch v := ins.(type) {
 	case Lit:

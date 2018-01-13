@@ -7,5 +7,5 @@ func main() {
 	if err := vm.LoadFile("testdata/j1e.bin"); err != nil {
 		panic(err)
 	}
-	vm.Eval()
+	vm.Run()
 }

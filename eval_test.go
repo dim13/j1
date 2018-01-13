@@ -114,7 +114,7 @@ func TestEval(t *testing.T) {
 		t.Run(fmt.Sprint(tc.ins), func(t *testing.T) {
 			state := New()
 			for _, ins := range tc.ins {
-				state.eval(ins)
+				state.Eval(ins)
 			}
 			cmp(t, *state, tc.end)
 		})
