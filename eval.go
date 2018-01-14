@@ -24,7 +24,7 @@ type J1 struct {
 	d       stack
 	r       stack
 	console Console
-	cancel  context.CancelFunc
+	stop    context.CancelFunc
 }
 
 func New() *J1 {
@@ -58,7 +58,7 @@ func (j1 *J1) LoadFile(fname string) error {
 func (j1 *J1) Run() {
 	ctx, cancel := context.WithCancel(context.Background())
 	j1.console = NewConsole(ctx)
-	j1.cancel = cancel
+	j1.stop = cancel
 	for {
 		select {
 		case <-ctx.Done():
@@ -86,7 +86,7 @@ func (j1 *J1) writeAt(addr, value uint16) {
 	case 0xf000: // key
 		j1.console.Write(value)
 	case 0xf002: // bye
-		j1.cancel()
+		j1.stop()
 	}
 }
 
