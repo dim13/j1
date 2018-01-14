@@ -54,8 +54,8 @@ func (c *Core) LoadFile(fname string) error {
 }
 
 // Run evaluates content of memory
-func (c *Core) Run() {
-	ctx, cancel := context.WithCancel(context.Background())
+func (c *Core) Run(ctx context.Context) {
+	ctx, cancel := context.WithCancel(ctx)
 	c.tty = NewConsole(ctx)
 	c.stop = cancel
 	for {
