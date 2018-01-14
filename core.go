@@ -16,131 +16,128 @@ type Console interface {
 	Len() uint16
 }
 
-// J1 Forth processor VM
-type J1 struct {
-	memory  [memSize]uint16 // 0..0x3fff main memory, 0x4000 .. 0x7fff mem-mapped i/o
-	pc      uint16          // 13 bit
-	st0     uint16          // top of data stack
-	d       stack
-	r       stack
-	console Console
-	stop    context.CancelFunc
+// Core of J1 Forth CPU
+type Core struct {
+	memory [memSize]uint16 // 0..0x3fff main memory, 0x4000 .. 0x7fff mem-mapped i/o
+	pc     uint16          // 13 bit
+	st0    uint16          // top of data stack
+	d, r   stack           // data and return stacks
+	tty    Console         // console i/o
+	stop   context.CancelFunc
 }
 
-func New() *J1 {
-	return new(J1)
+func New() *Core {
+	return new(Core)
 }
 
 // Reset VM
-func (j1 *J1) Reset() {
-	j1.pc, j1.st0, j1.d.sp, j1.r.sp = 0, 0, 0, 0
+func (c *Core) Reset() {
+	c.pc, c.st0, c.d.sp, c.r.sp = 0, 0, 0, 0
 }
 
 // LoadBytes into memory
-func (j1 *J1) LoadBytes(data []byte) error {
+func (c *Core) LoadBytes(data []byte) error {
 	size := len(data) >> 1
 	if size >= memSize {
 		return fmt.Errorf("too big")
 	}
-	return binary.Read(bytes.NewReader(data), binary.LittleEndian, j1.memory[:size])
+	return binary.Read(bytes.NewReader(data), binary.LittleEndian, c.memory[:size])
 }
 
 // LoadFile into memory
-func (j1 *J1) LoadFile(fname string) error {
+func (c *Core) LoadFile(fname string) error {
 	data, err := ioutil.ReadFile(fname)
 	if err != nil {
 		return err
 	}
-	return j1.LoadBytes(data)
+	return c.LoadBytes(data)
 }
 
 // Run evaluates content of memory
-func (j1 *J1) Run() {
+func (c *Core) Run() {
 	ctx, cancel := context.WithCancel(context.Background())
-	j1.console = NewConsole(ctx)
-	j1.stop = cancel
+	c.tty = NewConsole(ctx)
+	c.stop = cancel
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		default:
-			ins := Decode(j1.memory[j1.pc])
-			//fmt.Printf("%v\n%v", ins, j1)
-			j1.Eval(ins)
+			c.Eval(Decode(c.memory[c.pc]))
 		}
 	}
 }
 
-func (j1 *J1) String() string {
-	s := fmt.Sprintf("\tPC=%0.4X ST=%0.4X\n", j1.pc, j1.st0)
-	s += fmt.Sprintf("\tD=%0.4X\n", j1.d.dump())
-	s += fmt.Sprintf("\tR=%0.4X\n", j1.r.dump())
+func (c *Core) String() string {
+	s := fmt.Sprintf("\tPC=%0.4X ST=%0.4X\n", c.pc, c.st0)
+	s += fmt.Sprintf("\tD=%0.4X\n", c.d.dump())
+	s += fmt.Sprintf("\tR=%0.4X\n", c.r.dump())
 	return s
 }
 
-func (j1 *J1) writeAt(addr, value uint16) {
+func (c *Core) writeAt(addr, value uint16) {
 	if off := int(addr >> 1); off < memSize {
-		j1.memory[addr>>1] = value
+		c.memory[addr>>1] = value
 	}
 	switch addr {
 	case 0xf000: // key
-		j1.console.Write(value)
+		c.tty.Write(value)
 	case 0xf002: // bye
-		j1.stop()
+		c.stop()
 	}
 }
 
-func (j1 *J1) readAt(addr uint16) uint16 {
+func (c *Core) readAt(addr uint16) uint16 {
 	if off := int(addr >> 1); off < memSize {
-		return j1.memory[off]
+		return c.memory[off]
 	}
 	switch addr {
 	case 0xf000: // tx!
-		return j1.console.Read()
+		return c.tty.Read()
 	case 0xf001: // ?rx
-		return j1.console.Len()
+		return c.tty.Len()
 	}
 	return 0
 }
 
-func (j1 *J1) Eval(ins Instruction) {
-	j1.pc++
+func (c *Core) Eval(ins Instruction) {
+	c.pc++
 	switch v := ins.(type) {
 	case Lit:
-		j1.d.push(j1.st0)
-		j1.st0 = v.Value()
+		c.d.push(c.st0)
+		c.st0 = v.Value()
 	case Jump:
-		j1.pc = v.Value()
+		c.pc = v.Value()
 	case Call:
-		j1.r.push(j1.pc << 1)
-		j1.pc = v.Value()
+		c.r.push(c.pc << 1)
+		c.pc = v.Value()
 	case Cond:
-		if j1.st0 == 0 {
-			j1.pc = v.Value()
+		if c.st0 == 0 {
+			c.pc = v.Value()
 		}
-		j1.st0 = j1.d.pop()
+		c.st0 = c.d.pop()
 	case ALU:
 		if v.RtoPC {
-			j1.pc = j1.r.get() >> 1
+			c.pc = c.r.get() >> 1
 		}
 		if v.NtoAtT {
-			j1.writeAt(j1.st0, j1.d.get())
+			c.writeAt(c.st0, c.d.get())
 		}
-		st0 := j1.newST0(v.Opcode)
-		j1.d.move(v.Ddir)
-		j1.r.move(v.Rdir)
+		st0 := c.newST0(v.Opcode)
+		c.d.move(v.Ddir)
+		c.r.move(v.Rdir)
 		if v.TtoN {
-			j1.d.set(j1.st0)
+			c.d.set(c.st0)
 		}
 		if v.TtoR {
-			j1.r.set(j1.st0)
+			c.r.set(c.st0)
 		}
-		j1.st0 = st0
+		c.st0 = st0
 	}
 }
 
-func (j1 *J1) newST0(opcode uint16) uint16 {
-	T, N, R := j1.st0, j1.d.get(), j1.r.get()
+func (c *Core) newST0(opcode uint16) uint16 {
+	T, N, R := c.st0, c.d.get(), c.r.get()
 	switch opcode {
 	case opT: // T
 		return T
@@ -167,11 +164,11 @@ func (j1 *J1) newST0(opcode uint16) uint16 {
 	case opR: // R (rT)
 		return R
 	case opAtT: // [T]
-		return j1.readAt(T)
+		return c.readAt(T)
 	case opNlshiftT: // N<<T
 		return N << (T & 0xf)
 	case opDepth: // depth (dsp)
-		return (j1.r.depth() << 8) | j1.d.depth()
+		return (c.r.depth() << 8) | c.d.depth()
 	case opNuleT: // Nu<T
 		return bool2int(N < T)
 	default:
