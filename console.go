@@ -48,14 +48,6 @@ func (c *console) write(ctx context.Context) {
 	}
 }
 
-func (c *console) Read() uint16 {
-	return <-c.ich
-}
-
-func (c *console) Write(v uint16) {
-	c.och <- v
-}
-
-func (c *console) Len() uint16 {
-	return uint16(len(c.ich))
-}
+func (c *console) Read() uint16   { return <-c.ich }
+func (c *console) Write(v uint16) { c.och <- v }
+func (c *console) Len() uint16    { return uint16(len(c.ich)) }
