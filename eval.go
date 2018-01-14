@@ -2,13 +2,19 @@ package j1
 
 import (
 	"bytes"
+	"context"
 	"encoding/binary"
 	"fmt"
-	"io"
 	"io/ioutil"
 )
 
 const memSize = 0x4000
+
+type Console interface {
+	Read() uint16
+	Write(uint16)
+	Len() uint16
+}
 
 // J1 Forth processor VM
 type J1 struct {
@@ -17,18 +23,12 @@ type J1 struct {
 	st0     uint16          // top of data stack
 	d       stack
 	r       stack
-	console io.ReadWriter
-	done    chan struct{}
-	in, out chan uint16
+	console Console
+	cancel  context.CancelFunc
 }
 
 func New() *J1 {
-	return &J1{
-		console: NewConsole(),
-		done:    make(chan struct{}),
-		in:      make(chan uint16, 1),
-		out:     make(chan uint16, 1),
-	}
+	return new(J1)
 }
 
 // Reset VM
@@ -54,33 +54,14 @@ func (j1 *J1) LoadFile(fname string) error {
 	return j1.LoadBytes(data)
 }
 
-func (j1 *J1) read() {
-	var b uint16
-	for {
-		fmt.Fscanf(j1.console, "%c", &b)
-		select {
-		case <-j1.done:
-			return
-		case j1.in <- b:
-		}
-	}
-}
-
-func (j1 *J1) write() {
+// Run evaluates content of memory
+func (j1 *J1) Run() {
+	ctx, cancel := context.WithCancel(context.Background())
+	j1.console = NewConsole(ctx)
+	j1.cancel = cancel
 	for {
 		select {
-		case <-j1.done:
-			return
-		case b := <-j1.out:
-			fmt.Fprintf(j1.console, "%c", b)
-		}
-	}
-}
-
-func (j1 *J1) run() {
-	for {
-		select {
-		case <-j1.done:
+		case <-ctx.Done():
 			return
 		default:
 			ins := Decode(j1.memory[j1.pc])
@@ -88,13 +69,6 @@ func (j1 *J1) run() {
 			j1.Eval(ins)
 		}
 	}
-}
-
-// Run evaluates content of memory
-func (j1 *J1) Run() {
-	go j1.read()
-	go j1.write()
-	j1.run()
 }
 
 func (j1 *J1) String() string {
@@ -110,9 +84,9 @@ func (j1 *J1) writeAt(addr, value uint16) {
 	}
 	switch addr {
 	case 0xf000: // key
-		j1.out <- value
+		j1.console.Write(value)
 	case 0xf002: // bye
-		close(j1.done)
+		j1.cancel()
 	}
 }
 
@@ -122,9 +96,9 @@ func (j1 *J1) readAt(addr uint16) uint16 {
 	}
 	switch addr {
 	case 0xf000: // tx!
-		return <-j1.in
+		return j1.console.Read()
 	case 0xf001: // ?rx
-		return uint16(len(j1.in))
+		return j1.console.Len()
 	}
 	return 0
 }
