@@ -118,26 +118,26 @@ func (c *Core) Eval(ins Instruction) {
 		c.st0 = c.d.pop()
 	case ALU:
 		if v.RtoPC {
-			c.pc = c.r.get() >> 1
+			c.pc = c.r.peek() >> 1
 		}
 		if v.NtoAtT {
-			c.writeAt(c.st0, c.d.get())
+			c.writeAt(c.st0, c.d.peek())
 		}
 		st0 := c.newST0(v.Opcode)
 		c.d.move(v.Ddir)
 		c.r.move(v.Rdir)
 		if v.TtoN {
-			c.d.set(c.st0)
+			c.d.replace(c.st0)
 		}
 		if v.TtoR {
-			c.r.set(c.st0)
+			c.r.replace(c.st0)
 		}
 		c.st0 = st0
 	}
 }
 
 func (c *Core) newST0(opcode uint16) uint16 {
-	T, N, R := c.st0, c.d.get(), c.r.get()
+	T, N, R := c.st0, c.d.peek(), c.r.peek()
 	switch opcode {
 	case opT: // T
 		return T

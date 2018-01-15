@@ -8,24 +8,25 @@ type stack struct {
 }
 
 func (s *stack) move(dir int8) {
-	s.sp = (s.sp + dir + stackSize) % stackSize
+	s.sp = (s.sp + dir) & (stackSize - 1)
 }
 
 func (s *stack) push(v uint16) {
-	s.move(1)
-	s.set(v)
+	s.sp = (s.sp + 1) & (stackSize - 1)
+	s.data[s.sp] = v
 }
 
 func (s *stack) pop() uint16 {
-	defer s.move(-1)
-	return s.get()
+	v := s.data[s.sp]
+	s.sp = (s.sp - 1) & (stackSize - 1)
+	return v
 }
 
-func (s *stack) get() uint16 {
+func (s *stack) peek() uint16 {
 	return s.data[s.sp]
 }
 
-func (s *stack) set(v uint16) {
+func (s *stack) replace(v uint16) {
 	s.data[s.sp] = v
 }
 
