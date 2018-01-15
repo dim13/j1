@@ -17,9 +17,9 @@ func (s *stack) push(v uint16) {
 }
 
 func (s *stack) pop() uint16 {
-	v := s.data[s.sp]
+	sp := s.sp
 	s.sp = (s.sp - 1) & (stackSize - 1)
-	return v
+	return s.data[sp]
 }
 
 func (s *stack) peek() uint16 {
