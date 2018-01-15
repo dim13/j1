@@ -17,9 +17,8 @@ func (s *stack) push(v uint16) {
 }
 
 func (s *stack) pop() uint16 {
-	v := s.get()
-	s.move(-1)
-	return v
+	defer s.move(-1)
+	return s.get()
 }
 
 func (s *stack) get() uint16 {
