@@ -106,7 +106,7 @@ func TestEval(t *testing.T) {
 		},
 		{ // !
 			ins: []Instruction{Lit(1), Lit(0), ALU{Opcode: opN, NtoAtT: true, Ddir: -1}},
-			end: Core{pc: 3, st0: 1, d: stack{data: [0x20]uint16{0, 0, 1}, sp: 1}, memory: [0x4000]uint16{1}},
+			end: Core{pc: 3, st0: 1, d: stack{data: [0x20]uint16{0, 0, 1}, sp: 1}, memory: [memSize]uint16{1}},
 		},
 	}
 
@@ -141,7 +141,7 @@ func TestNextST0(t *testing.T) {
 		{ins: ALU{Opcode: opNrshiftT}, st0: 0x3f, state: Core{st0: 0x02, d: stack{data: [0x20]uint16{0, 0xaa, 0xff}, sp: 2}}},
 		{ins: ALU{Opcode: opTminus1}, st0: 0x54, state: Core{st0: 0x55}},
 		{ins: ALU{Opcode: opR}, st0: 0x5, state: Core{r: stack{data: [0x20]uint16{0, 0x05}, sp: 1}}},
-		{ins: ALU{Opcode: opAtT}, st0: 0x5, state: Core{st0: 0x02, memory: [0x4000]uint16{0, 5, 10}}},
+		{ins: ALU{Opcode: opAtT}, st0: 0x5, state: Core{st0: 0x02, memory: [memSize]uint16{0, 5, 10}}},
 		{ins: ALU{Opcode: opNlshiftT}, st0: 0x3fc, state: Core{st0: 0x02, d: stack{data: [0x20]uint16{0, 0xaa, 0xff}, sp: 2}}},
 		{ins: ALU{Opcode: opDepth}, st0: 0x305, state: Core{r: stack{sp: 3}, d: stack{sp: 5}}},
 		{ins: ALU{Opcode: opNuleT}, st0: 0xffff, state: Core{st0: 0xff, d: stack{data: [0x20]uint16{0, 0xaa, 0xbb}, sp: 2}}},
@@ -164,7 +164,7 @@ func TestLoadBytes(t *testing.T) {
 	if err := j1.LoadBytes(data); err != nil {
 		t.Fatal(err)
 	}
-	expect := [0x4000]uint16{0x0201, 0x0804}
+	expect := [memSize]uint16{0x0201, 0x0804}
 	if j1.memory != expect {
 		t.Errorf("got %v, want %v", j1.memory[:2], expect)
 	}

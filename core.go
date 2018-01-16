@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io/ioutil"
 )
@@ -39,7 +40,7 @@ func (c *Core) Reset() {
 func (c *Core) LoadBytes(data []byte) error {
 	size := len(data) >> 1
 	if size >= memSize {
-		return fmt.Errorf("too big")
+		return errors.New("too big")
 	}
 	return binary.Read(bytes.NewReader(data), binary.LittleEndian, c.memory[:size])
 }
@@ -136,6 +137,11 @@ func (c *Core) Eval(ins Instruction) {
 	}
 }
 
+var boolValue = map[bool]uint16{
+	false: 0,
+	true:  ^uint16(0),
+}
+
 func (c *Core) newST0(opcode uint16) uint16 {
 	T, N, R := c.st0, c.d.peek(), c.r.peek()
 	switch opcode {
@@ -154,9 +160,9 @@ func (c *Core) newST0(opcode uint16) uint16 {
 	case opNotT: // ~T
 		return ^T
 	case opNeqT: // N==T
-		return bool2int(N == T)
+		return boolValue[N == T]
 	case opNleT: // N<T
-		return bool2int(int16(N) < int16(T))
+		return boolValue[int16(N) < int16(T)]
 	case opNrshiftT: // N>>T
 		return N >> (T & 0xf)
 	case opTminus1: // T-1
@@ -170,15 +176,8 @@ func (c *Core) newST0(opcode uint16) uint16 {
 	case opDepth: // depth (dsp)
 		return (c.r.depth() << 8) | c.d.depth()
 	case opNuleT: // Nu<T
-		return bool2int(N < T)
+		return boolValue[N < T]
 	default:
 		panic("invalid instruction")
 	}
-}
-
-func bool2int(b bool) uint16 {
-	if b {
-		return ^uint16(0)
-	}
-	return 0
 }
