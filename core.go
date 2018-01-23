@@ -55,10 +55,9 @@ func (c *Core) LoadFile(fname string) error {
 }
 
 // Run evaluates content of memory
-func (c *Core) Run(ctx context.Context) {
-	ctx, cancel := context.WithCancel(ctx)
-	c.tty = NewConsole(ctx)
+func (c *Core) Run(ctx context.Context, cancel context.CancelFunc, con Console) {
 	c.stop = cancel
+	c.tty = con
 	for {
 		select {
 		case <-ctx.Done():

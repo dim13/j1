@@ -6,10 +6,13 @@ import (
 	"context"
 
 	"dim13.org/j1"
+	"dim13.org/j1/console"
 )
 
 func main() {
 	vm := j1.New()
 	vm.LoadBytes(J1eBin)
-	vm.Run(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	vm.Run(ctx, cancel, console.New(ctx))
 }

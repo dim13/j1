@@ -1,4 +1,4 @@
-package j1
+package console
 
 import (
 	"context"
@@ -7,14 +7,14 @@ import (
 	"os"
 )
 
-type console struct {
+type Console struct {
 	r        io.Reader
 	w        io.Writer
 	ich, och chan uint16
 }
 
-func NewConsole(ctx context.Context) *console {
-	c := &console{
+func New(ctx context.Context) *Console {
+	c := &Console{
 		r:   os.Stdin,
 		w:   os.Stdout,
 		ich: make(chan uint16, 1),
@@ -25,7 +25,7 @@ func NewConsole(ctx context.Context) *console {
 	return c
 }
 
-func (c *console) read(ctx context.Context) {
+func (c *Console) read(ctx context.Context) {
 	var v uint16
 	for {
 		fmt.Fscanf(c.r, "%c", &v)
@@ -37,7 +37,7 @@ func (c *console) read(ctx context.Context) {
 	}
 }
 
-func (c *console) write(ctx context.Context) {
+func (c *Console) write(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -48,6 +48,6 @@ func (c *console) write(ctx context.Context) {
 	}
 }
 
-func (c *console) Read() uint16   { return <-c.ich }
-func (c *console) Write(v uint16) { c.och <- v }
-func (c *console) Len() uint16    { return uint16(len(c.ich)) }
+func (c *Console) Read() uint16   { return <-c.ich }
+func (c *Console) Write(v uint16) { c.och <- v }
+func (c *Console) Len() uint16    { return uint16(len(c.ich)) }
