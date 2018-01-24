@@ -24,6 +24,7 @@ func New() *Console {
 
 func (c *Console) read(r io.Reader) {
 	var v uint16
+	defer close(c.ich)
 	for {
 		fmt.Fscanf(r, "%c", &v)
 		select {
@@ -35,6 +36,7 @@ func (c *Console) read(r io.Reader) {
 }
 
 func (c *Console) write(w io.Writer) {
+	defer close(c.och)
 	for {
 		select {
 		case <-c.done:
