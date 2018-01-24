@@ -28,7 +28,7 @@ type Core struct {
 	tty    Console         // console i/o
 }
 
-// New core
+// New core with console i/o
 func New(con Console) *Core {
 	return &Core{tty: con}
 }
@@ -94,7 +94,7 @@ func (c *Core) Run() {
 	for {
 		ins := c.Decode()
 		err := c.Eval(ins)
-		if err != nil {
+		if err == errStop {
 			return
 		}
 	}
