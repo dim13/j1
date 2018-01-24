@@ -7,29 +7,25 @@ import (
 )
 
 type Console struct {
-	r        io.Reader
-	w        io.Writer
 	ich, och chan uint16
 	done     chan struct{}
 }
 
 func New() *Console {
 	c := &Console{
-		r:    os.Stdin,
-		w:    os.Stdout,
 		ich:  make(chan uint16, 1),
 		och:  make(chan uint16, 1),
 		done: make(chan struct{}),
 	}
-	go c.read()
-	go c.write()
+	go c.read(os.Stdin)
+	go c.write(os.Stdout)
 	return c
 }
 
-func (c *Console) read() {
+func (c *Console) read(r io.Reader) {
 	var v uint16
 	for {
-		fmt.Fscanf(c.r, "%c", &v)
+		fmt.Fscanf(r, "%c", &v)
 		select {
 		case <-c.done:
 			return
@@ -38,13 +34,13 @@ func (c *Console) read() {
 	}
 }
 
-func (c *Console) write() {
+func (c *Console) write(w io.Writer) {
 	for {
 		select {
 		case <-c.done:
 			return
 		case v := <-c.och:
-			fmt.Fprintf(c.w, "%c", v)
+			fmt.Fprintf(w, "%c", v)
 		}
 	}
 }
