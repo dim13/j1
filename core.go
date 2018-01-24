@@ -2,7 +2,6 @@ package j1
 
 import (
 	"bytes"
-	"context"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -10,6 +9,8 @@ import (
 )
 
 const memSize = 0x4000
+
+var ErrStop = errors.New("stop")
 
 type Console interface {
 	Read() uint16
@@ -24,11 +25,10 @@ type Core struct {
 	st0    uint16          // top of data stack
 	d, r   stack           // data and return stacks
 	tty    Console         // console i/o
-	stop   context.CancelFunc
 }
 
-func New() *Core {
-	return new(Core)
+func New(con Console) *Core {
+	return &Core{tty: con}
 }
 
 // Reset VM
@@ -54,20 +54,6 @@ func (c *Core) LoadFile(fname string) error {
 	return c.LoadBytes(data)
 }
 
-// Run evaluates content of memory
-func (c *Core) Run(ctx context.Context, cancel context.CancelFunc, con Console) {
-	c.stop = cancel
-	c.tty = con
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		default:
-			c.Eval(Decode(c.memory[c.pc]))
-		}
-	}
-}
-
 func (c *Core) String() string {
 	s := fmt.Sprintf("\tPC=%0.4X ST=%0.4X\n", c.pc, c.st0)
 	s += fmt.Sprintf("\tD=%0.4X\n", c.d.dump())
@@ -75,7 +61,7 @@ func (c *Core) String() string {
 	return s
 }
 
-func (c *Core) writeAt(addr, value uint16) {
+func (c *Core) writeAt(addr, value uint16) error {
 	if off := int(addr >> 1); off < memSize {
 		c.memory[addr>>1] = value
 	}
@@ -83,8 +69,9 @@ func (c *Core) writeAt(addr, value uint16) {
 	case 0xf000: // key
 		c.tty.Write(value)
 	case 0xf002: // bye
-		c.stop()
+		return ErrStop
 	}
+	return nil
 }
 
 func (c *Core) readAt(addr uint16) uint16 {
@@ -100,7 +87,22 @@ func (c *Core) readAt(addr uint16) uint16 {
 	return 0
 }
 
-func (c *Core) Eval(ins Instruction) {
+// Run evaluates content of memory
+func (c *Core) Run() {
+	for {
+		ins := c.Decode()
+		err := c.Eval(ins)
+		if err != nil {
+			return
+		}
+	}
+}
+
+func (c *Core) Decode() Instruction {
+	return Decode(c.memory[c.pc])
+}
+
+func (c *Core) Eval(ins Instruction) error {
 	c.pc++
 	switch v := ins.(type) {
 	case Lit:
@@ -121,7 +123,10 @@ func (c *Core) Eval(ins Instruction) {
 			c.pc = c.r.peek() >> 1
 		}
 		if v.NtoAtT {
-			c.writeAt(c.st0, c.d.peek())
+			err := c.writeAt(c.st0, c.d.peek())
+			if err != nil {
+				return err
+			}
 		}
 		st0 := c.newST0(v.Opcode)
 		c.d.move(v.Ddir)
@@ -134,6 +139,7 @@ func (c *Core) Eval(ins Instruction) {
 		}
 		c.st0 = st0
 	}
+	return nil
 }
 
 var boolValue = map[bool]uint16{

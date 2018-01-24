@@ -27,6 +27,12 @@ func cmp(t *testing.T, got, want Core) {
 	}
 }
 
+type mocConsole struct{}
+
+func (m *mocConsole) Read() uint16 { return 0 }
+func (m *mocConsole) Write(uint16) {}
+func (m *mocConsole) Len() uint16  { return 0 }
+
 func TestEval(t *testing.T) {
 	testCases := []struct {
 		ins []Instruction
@@ -112,7 +118,7 @@ func TestEval(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprint(tc.ins), func(t *testing.T) {
-			state := New()
+			state := New(&mocConsole{})
 			for _, ins := range tc.ins {
 				state.Eval(ins)
 			}
@@ -160,7 +166,7 @@ func TestNextST0(t *testing.T) {
 
 func TestLoadBytes(t *testing.T) {
 	data := []byte{1, 2, 4, 8}
-	j1 := New()
+	j1 := New(&mocConsole{})
 	if err := j1.LoadBytes(data); err != nil {
 		t.Fatal(err)
 	}
