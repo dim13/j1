@@ -21,8 +21,8 @@ func Decode(v uint16) Instruction {
 
 // Instruction interface
 type Instruction interface {
-	Value() uint16
-	Compile() uint16
+	value() uint16
+	compile() uint16
 }
 
 // Lit is a literal
@@ -30,32 +30,32 @@ type Lit uint16
 
 func newLit(v uint16) Lit     { return Lit(v &^ uint16(1<<15)) }
 func (v Lit) String() string  { return fmt.Sprintf("LIT %0.4X", uint16(v)) }
-func (v Lit) Value() uint16   { return uint16(v) }
-func (v Lit) Compile() uint16 { return v.Value() | (1 << 15) }
+func (v Lit) value() uint16   { return uint16(v) }
+func (v Lit) compile() uint16 { return v.value() | (1 << 15) }
 
 // Jump is an unconditional branch
 type Jump uint16
 
 func newJump(v uint16) Jump    { return Jump(v &^ uint16(7<<13)) }
 func (v Jump) String() string  { return fmt.Sprintf("UBRANCH %0.4X", uint16(v<<1)) }
-func (v Jump) Value() uint16   { return uint16(v) }
-func (v Jump) Compile() uint16 { return v.Value() }
+func (v Jump) value() uint16   { return uint16(v) }
+func (v Jump) compile() uint16 { return v.value() }
 
 // Cond is a conditional branch
 type Cond uint16
 
 func newCond(v uint16) Cond    { return Cond(v &^ uint16(7<<13)) }
 func (v Cond) String() string  { return fmt.Sprintf("0BRANCH %0.4X", uint16(v<<1)) }
-func (v Cond) Value() uint16   { return uint16(v) }
-func (v Cond) Compile() uint16 { return v.Value() | (1 << 13) }
+func (v Cond) value() uint16   { return uint16(v) }
+func (v Cond) compile() uint16 { return v.value() | (1 << 13) }
 
 // Call procedure
 type Call uint16
 
 func newCall(v uint16) Call    { return Call(v &^ uint16(7<<13)) }
 func (v Call) String() string  { return fmt.Sprintf("CALL %0.4X", uint16(v<<1)) }
-func (v Call) Value() uint16   { return uint16(v) }
-func (v Call) Compile() uint16 { return v.Value() | (2 << 13) }
+func (v Call) value() uint16   { return uint16(v) }
+func (v Call) compile() uint16 { return v.value() | (2 << 13) }
 
 // ALU instruction
 type ALU struct {
@@ -80,7 +80,7 @@ func newALU(v uint16) ALU {
 	}
 }
 
-func (v ALU) Value() uint16 {
+func (v ALU) value() uint16 {
 	ret := v.Opcode << 8
 	if v.RtoPC {
 		ret |= 1 << 12
@@ -99,7 +99,7 @@ func (v ALU) Value() uint16 {
 	return ret
 }
 
-func (v ALU) Compile() uint16 { return v.Value() | (3 << 13) }
+func (v ALU) compile() uint16 { return v.value() | (3 << 13) }
 
 func expand(v uint16) int8 {
 	if v&2 != 0 {

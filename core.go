@@ -10,8 +10,9 @@ import (
 
 const memSize = 0x4000
 
-var ErrStop = errors.New("stop")
+var errStop = errors.New("stop")
 
+// Console i/o
 type Console interface {
 	Read() uint16
 	Write(uint16)
@@ -27,6 +28,7 @@ type Core struct {
 	tty    Console         // console i/o
 }
 
+// New core
 func New(con Console) *Core {
 	return &Core{tty: con}
 }
@@ -69,7 +71,7 @@ func (c *Core) writeAt(addr, value uint16) error {
 	case 0xf000: // key
 		c.tty.Write(value)
 	case 0xf002: // bye
-		return ErrStop
+		return errStop
 	}
 	return nil
 }
@@ -98,24 +100,26 @@ func (c *Core) Run() {
 	}
 }
 
+// Decode instruction
 func (c *Core) Decode() Instruction {
 	return Decode(c.memory[c.pc])
 }
 
+// Eval instruction
 func (c *Core) Eval(ins Instruction) error {
 	c.pc++
 	switch v := ins.(type) {
 	case Lit:
 		c.d.push(c.st0)
-		c.st0 = v.Value()
+		c.st0 = v.value()
 	case Jump:
-		c.pc = v.Value()
+		c.pc = v.value()
 	case Call:
 		c.r.push(c.pc << 1)
-		c.pc = v.Value()
+		c.pc = v.value()
 	case Cond:
 		if c.st0 == 0 {
-			c.pc = v.Value()
+			c.pc = v.value()
 		}
 		c.st0 = c.d.pop()
 	case ALU:
