@@ -3,7 +3,6 @@ package console
 import (
 	"fmt"
 	"io"
-	"os"
 )
 
 type Console struct {
@@ -11,14 +10,14 @@ type Console struct {
 	done     chan struct{}
 }
 
-func New() *Console {
+func New(w io.Writer, r io.Reader) *Console {
 	c := &Console{
 		ich:  make(chan uint16, 1),
 		och:  make(chan uint16, 1),
 		done: make(chan struct{}),
 	}
-	go c.read(os.Stdin)
-	go c.write(os.Stdout)
+	go c.write(w)
+	go c.read(r)
 	return c
 }
 
