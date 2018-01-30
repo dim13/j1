@@ -94,8 +94,8 @@ a: literal
 variable tlast
 variable tuser
 
-0001 constant =ver
-0005 constant =ext
+0002 constant =major
+0000 constant =minor
 0040 constant =comp
 0080 constant =imed
 7f1f constant =mask
@@ -871,7 +871,7 @@ t: words
 	  (words)
 	  1-
    repeat t;
-t: ver ( -- n ) =ver literal 100 literal * =ext literal + t;
+t: ver ( -- n ) =major literal 100 literal * =minor literal + t;
 t: hi ( -- )
    cr ."| $literal eforth j1 v"
 	base @ hex
@@ -892,14 +892,14 @@ there 			[u] dp t!
 [t] ?rx			[u] '?key t!
 [t] tx!			[u] 'emit t!
 [t] <\>			[u] '\ t!
-[t] $interpret	[u] 'eval  t!
+[t] $interpret		[u] 'eval  t!
 [t] abort		[u] 'abort t!
 [t] hi			[u] 'boot t!
 [t] <name?>		[u] 'name? t!
 [t] <overt>		[u] 'overt t!
 [t] <$,n>		[u] '$,n t!
 [t] <;>			[u] '; t!
-[t] <create>	[u] 'create t!
+[t] <create>		[u] 'create t!
 [t] cold 		2/ =cold t!
 
 save-target j1.bin
