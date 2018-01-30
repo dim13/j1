@@ -21,16 +21,16 @@ type Console interface {
 
 // Core of J1 Forth CPU
 type Core struct {
-	memory [memSize]uint16 // 0..0x3fff main memory, 0x4000 .. 0x7fff mem-mapped i/o
-	pc     uint16          // 13 bit
-	st0    uint16          // top of data stack
-	d, r   stack           // data and return stacks
-	tty    Console         // console i/o
+	memory  [memSize]uint16 // 0..0x3fff main memory, 0x4000 .. 0x7fff mem-mapped i/o
+	pc      uint16          // 13 bit
+	st0     uint16          // top of data stack
+	d, r    stack           // data and return stacks
+	console Console         // console i/o
 }
 
 // New core with console i/o
 func New(con Console) *Core {
-	return &Core{tty: con}
+	return &Core{console: con}
 }
 
 // Reset VM
@@ -69,7 +69,7 @@ func (c *Core) writeAt(addr, value uint16) error {
 	}
 	switch addr {
 	case 0xf000: // key
-		c.tty.Write(value)
+		c.console.Write(value)
 	case 0xf002: // bye
 		return errStop
 	}
@@ -82,9 +82,9 @@ func (c *Core) readAt(addr uint16) uint16 {
 	}
 	switch addr {
 	case 0xf000: // tx!
-		return c.tty.Read()
+		return c.console.Read()
 	case 0xf001: // ?rx
-		return c.tty.Len()
+		return c.console.Len()
 	}
 	return 0
 }

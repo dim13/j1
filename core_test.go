@@ -20,7 +20,7 @@ func cmp(t *testing.T, got, want Core) {
 		t.Errorf("rsp: got %0.4X, want %0.4X", got.r.sp, want.r.sp)
 	}
 	if got.d.data != want.d.data {
-		t.Errorf("d:stack: got %0.4X, want %0.4X", got.d.data, want.d.data)
+		t.Errorf("dstack: got %0.4X, want %0.4X", got.d.data, want.d.data)
 	}
 	if got.r.data != want.r.data {
 		t.Errorf("rstack: got %0.4X, want %0.4X", got.r.data, want.r.data)
