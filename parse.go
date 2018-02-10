@@ -68,6 +68,9 @@ type ALU struct {
 	Ddir   int8
 }
 
+// expand 2 bit unsigned to 8 bit signed
+var expand = map[uint16]int8{0: 0, 1: 1, 2: -2, 3: -1}
+
 func newALU(v uint16) ALU {
 	return ALU{
 		Opcode: (v >> 8) & 15,
@@ -100,9 +103,6 @@ func (v ALU) value() uint16 {
 }
 
 func (v ALU) compile() uint16 { return v.value() | (3 << 13) }
-
-// expand 2 bit unsigned to 8 bit signed
-var expand = map[uint16]int8{0: 0, 1: 1, 2: -2, 3: -1}
 
 const (
 	opT        = iota // 0
