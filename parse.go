@@ -5,9 +5,9 @@ import "fmt"
 // Decode instruction
 func Decode(v uint16) Instruction {
 	switch {
-	case v&(1<<15) != 0:
+	case v&(1<<15) == 1<<15:
 		return newLit(v)
-	case v&(7<<13) == 0:
+	case v&(7<<13) == 0<<13:
 		return newJump(v)
 	case v&(7<<13) == 1<<13:
 		return newCond(v)
