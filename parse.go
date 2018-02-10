@@ -76,7 +76,7 @@ func newALU(v uint16) ALU {
 		TtoR:   v&(1<<6) != 0,
 		NtoAtT: v&(1<<5) != 0,
 		Rdir:   expand[(v>>2)&3],
-		Ddir:   expand[v&3],
+		Ddir:   expand[(v>>0)&3],
 	}
 }
 
@@ -95,7 +95,7 @@ func (v ALU) value() uint16 {
 		ret |= 1 << 5
 	}
 	ret |= uint16(v.Rdir&3) << 2
-	ret |= uint16(v.Ddir & 3)
+	ret |= uint16(v.Ddir&3) << 0
 	return ret
 }
 
