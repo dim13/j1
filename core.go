@@ -8,9 +8,7 @@ import (
 	"io/ioutil"
 )
 
-const memSize = 0x4000
-
-var errStop = errors.New("stop")
+var ErrStop = errors.New("stop")
 
 // Console i/o
 type Console interface {
@@ -21,11 +19,11 @@ type Console interface {
 
 // Core of J1 Forth CPU
 type Core struct {
-	memory  [memSize]uint16 // 0..0x3fff main memory, 0x4000 .. 0x7fff mem-mapped i/o
-	pc      uint16          // 13 bit
-	st0     uint16          // top of data stack
-	d, r    stack           // data and return stacks
-	console Console         // console i/o
+	memory  [0x4000]uint16 // 0..0x3fff main memory, 0x4000 .. 0x7fff mem-mapped i/o
+	pc      uint16         // 13 bit
+	st0     uint16         // top of data stack
+	d, r    stack          // data and return stacks
+	console Console        // console i/o
 }
 
 // New core with console i/o
@@ -41,7 +39,7 @@ func (c *Core) Reset() {
 // LoadBytes into memory
 func (c *Core) LoadBytes(data []byte) error {
 	size := len(data) >> 1
-	if size >= memSize {
+	if size >= len(c.memory) {
 		return errors.New("too big")
 	}
 	return binary.Read(bytes.NewReader(data), binary.LittleEndian, c.memory[:size])
@@ -64,20 +62,20 @@ func (c *Core) String() string {
 }
 
 func (c *Core) writeAt(addr, value uint16) error {
-	if off := int(addr >> 1); off < memSize {
+	if off := int(addr >> 1); off < len(c.memory) {
 		c.memory[addr>>1] = value
 	}
 	switch addr {
 	case 0xf000: // key
 		c.console.Write(value)
 	case 0xf002: // bye
-		return errStop
+		return ErrStop
 	}
 	return nil
 }
 
 func (c *Core) readAt(addr uint16) uint16 {
-	if off := int(addr >> 1); off < memSize {
+	if off := int(addr >> 1); off < len(c.memory) {
 		return c.memory[off]
 	}
 	switch addr {
@@ -94,7 +92,7 @@ func (c *Core) Run() {
 	for {
 		ins := c.Decode()
 		err := c.Eval(ins)
-		if err == errStop {
+		if err == ErrStop {
 			return
 		}
 	}
