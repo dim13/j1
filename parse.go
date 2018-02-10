@@ -75,8 +75,8 @@ func newALU(v uint16) ALU {
 		TtoN:   v&(1<<7) != 0,
 		TtoR:   v&(1<<6) != 0,
 		NtoAtT: v&(1<<5) != 0,
-		Rdir:   expand((v >> 2) & 3),
-		Ddir:   expand(v & 3),
+		Rdir:   expand[(v>>2)&3],
+		Ddir:   expand[v&3],
 	}
 }
 
@@ -101,12 +101,8 @@ func (v ALU) value() uint16 {
 
 func (v ALU) compile() uint16 { return v.value() | (3 << 13) }
 
-func expand(v uint16) int8 {
-	if v&2 != 0 {
-		v |= 0xfc
-	}
-	return int8(v)
-}
+// expand 2 bit unsigned to 8 bit signed
+var expand = map[uint16]int8{0: 0, 1: 1, 2: -2, 3: -1}
 
 const (
 	opT        = iota // 0
