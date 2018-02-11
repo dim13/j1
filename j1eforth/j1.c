@@ -95,8 +95,8 @@ static void execute(int entrypoint)
         case 0xa:  _t = t-1; break; /* 1- */
         case 0xb:  _t = r[rsp];  break; /* r@ */
         case 0xc:  switch (t) {
-		   case 0xf001: _t = 1; break;
-		   case 0xf000: _t = getch(); break;
+		   case 0x7001: _t = 1; break;
+		   case 0x7000: _t = getch(); break;
 		   default: _t = memory[t>>1]; break;
 		   }
 		   break; /* @ */
@@ -112,8 +112,8 @@ static void execute(int entrypoint)
            r[rsp] = t;
         if (insn & 0x20) /* s->[t] */
 		switch (t) {
-		case 0xf002: rsp = 0; break;
-		case 0xf000: putch(s); break;
+		case 0x7002: rsp = 0; break;
+		case 0x7000: putch(s); break;
 		default: memory[t>>1]=s; break; /* ! */
 		}
 		t = _t;
