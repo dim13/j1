@@ -350,7 +350,7 @@ t: 2* 1 literal lshift t;
 t: 1+ 1 literal + t;
 t: sp@ dsp ff literal and t;
 t: execute ( ca -- ) >r t;
-t: bye ( -- ) f002 literal ! t;
+t: bye ( -- ) 7002 literal ! t;
 t: c@ ( b -- c )
   dup @ swap 1 literal and if
    8 literal rshift else ff literal and then exit t;
@@ -493,17 +493,17 @@ t: number? ( a -- n t | a f )
      else r> r> 2drop 2drop 0 literal
       then dup
    then r> 2drop r> base ! t;
-t: ?rx ( -- c t | f ) f001 literal @ 1 literal and 0= invert t;
+t: ?rx ( -- c t | f ) 7001 literal @ 1 literal and 0= invert t;
 t: tx! ( c -- )
    begin
-    f001 literal @ 2 literal and 0=
-   until f000 literal ! t;
+    7001 literal @ 2 literal and 0=
+   until 7000 literal ! t;
 t: ?key ( -- c ) '?key @execute t;
 t: emit ( c -- ) 'emit @execute t;
 t: key ( -- c )
     begin
      ?key
-	until f000 literal @ t;
+	until 7000 literal @ t;
 t: nuf? ( -- t ) ?key dup if drop key =lf literal = then exit t;
 t: space ( -- ) bl emit t;
 t: spaces ( +n -- ) 0 literal max  for aft space then next t;

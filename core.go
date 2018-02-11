@@ -70,9 +70,9 @@ func (c *Core) writeAt(addr, value uint16) error {
 		c.memory[addr>>1] = value
 	}
 	switch addr {
-	case 0xf000: // key
+	case 0x7000: // key
 		c.console.Write(value)
-	case 0xf002: // bye
+	case 0x7002: // bye
 		return ErrStop
 	}
 	return nil
@@ -83,9 +83,9 @@ func (c *Core) readAt(addr uint16) uint16 {
 		return c.memory[addr>>1]
 	}
 	switch addr {
-	case 0xf000: // tx!
+	case 0x7000: // tx!
 		return c.console.Read()
-	case 0xf001: // ?rx
+	case 0x7001: // ?rx
 		return c.console.Len()
 	}
 	return 0
