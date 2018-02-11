@@ -102,7 +102,7 @@ variable tuser
 0002 constant =cell
 0010 constant =base
 0008 constant =bksp
-000a constant =lf
+000a constant =nl
 000d constant =cr
 
 4000 constant =em
@@ -165,7 +165,7 @@ variable tuser
       0 tlast !
     =up tuser !
 
-: hex# ( u -- addr len )  0 <# base @ >r hex =lf hold # # # # r> base ! #> ;
+: hex# ( u -- addr len )  0 <# base @ >r hex =nl hold # # # # r> base ! #> ;
 : save-hex ( <name> -- )
   parse-word w/o create-file throw
   there 0 do i t@  over >r hex# r> write-file throw 2 +loop
@@ -504,11 +504,11 @@ t: key ( -- c )
     begin
      ?key
 	until 7000 literal @ t;
-t: nuf? ( -- t ) ?key dup if drop key =lf literal = then exit t;
+t: nuf? ( -- t ) ?key dup if drop key =nl literal = then exit t;
 t: space ( -- ) bl emit t;
 t: spaces ( +n -- ) 0 literal max  for aft space then next t;
 t: type ( b u -- ) for aft count emit then next drop t;
-t: cr ( -- ) =cr literal emit =lf literal emit t;
+t: cr ( -- ) =cr literal emit =nl literal emit t;
 t: do$ ( -- a ) r> r@ r> count + aligned >r swap >r t; compile-only
 t: $"| ( -- a ) do$ noop t; compile-only
 t: .$ ( a -- ) count type t;
@@ -580,7 +580,7 @@ t: ^h ( bot eot cur -- bot eot cur )
 t: tap ( bot eot cur c -- bot eot cur )
    dup emit over c! 1+ t;
 t: ktap ( bot eot cur c -- bot eot cur )
-   dup =lf literal xor if
+   dup =nl literal xor if
     =bksp literal xor if
      bl tap exit
     then ^h exit
