@@ -11,7 +11,7 @@ int getch(void) { /* reads from keypress, doesn't echo */
     int ch;
     tcgetattr( STDIN_FILENO, &oldattr );
     newattr = oldattr;
-    newattr.c_iflag &= ~( ICRNL );
+    // newattr.c_iflag &= ~( ICRNL );
     newattr.c_lflag &= ~( ICANON | ECHO );
     tcsetattr( STDIN_FILENO, TCSANOW, &newattr );
     ch = getchar();
