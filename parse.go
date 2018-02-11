@@ -156,7 +156,7 @@ const (
 )
 
 var opcodeNames = []string{
-	"T", "N", "T+N", "T&N", "T|N", "T^N", "¬T", "N=T",
+	"T", "N", "T+N", "T∧N", "T∨N", "T⊻N", "¬T", "N=T",
 	"N<T", "N≫T", "T-1", "R", "[T]", "N≪T", "depth", "Nu<T",
 }
 
