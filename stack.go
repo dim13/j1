@@ -6,17 +6,17 @@ type stack struct {
 }
 
 func (s *stack) move(dir int8) {
-	s.sp = (s.sp + dir) & int8(len(s.data)-1)
+	s.sp = (s.sp + dir) & 0x1f
 }
 
 func (s *stack) push(v uint16) {
-	s.sp = (s.sp + 1) & int8(len(s.data)-1)
+	s.sp = (s.sp + 1) & 0x1f
 	s.data[s.sp] = v
 }
 
 func (s *stack) pop() uint16 {
 	sp := s.sp
-	s.sp = (s.sp - 1) & int8(len(s.data)-1)
+	s.sp = (s.sp - 1) & 0x1f
 	return s.data[sp]
 }
 
