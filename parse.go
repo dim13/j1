@@ -26,6 +26,12 @@ type Instruction interface {
 }
 
 // Lit is a literal
+//
+//  15 14 13 12 11 10  9  8  7  6  5  4  3  2  1  0
+//   |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+//   |  `-------------------------------------------- value
+//   `----------------------------------------------- 1
+//
 type Lit uint16
 
 func newLit(v uint16) Lit     { return Lit(v &^ uint16(1<<15)) }
@@ -34,6 +40,12 @@ func (v Lit) value() uint16   { return uint16(v) }
 func (v Lit) compile() uint16 { return v.value() | (1 << 15) }
 
 // Jump is an unconditional branch
+//
+//  15 14 13 12 11 10  9  8  7  6  5  4  3  2  1  0
+//   |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+//   |  |  |  `-------------------------------------- target
+//   `----------------------------------------------- 0 0 0
+//
 type Jump uint16
 
 func newJump(v uint16) Jump    { return Jump(v &^ uint16(7<<13)) }
@@ -42,6 +54,12 @@ func (v Jump) value() uint16   { return uint16(v) }
 func (v Jump) compile() uint16 { return v.value() }
 
 // Cond is a conditional branch
+//
+//  15 14 13 12 11 10  9  8  7  6  5  4  3  2  1  0
+//   |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+//   |  |  |  `-------------------------------------- target
+//   `----------------------------------------------- 0 0 1
+//
 type Cond uint16
 
 func newCond(v uint16) Cond    { return Cond(v &^ uint16(7<<13)) }
@@ -50,6 +68,12 @@ func (v Cond) value() uint16   { return uint16(v) }
 func (v Cond) compile() uint16 { return v.value() | (1 << 13) }
 
 // Call procedure
+//
+//  15 14 13 12 11 10  9  8  7  6  5  4  3  2  1  0
+//   |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+//   |  |  |  `-------------------------------------- target
+//   `----------------------------------------------- 0 1 0
+//
 type Call uint16
 
 func newCall(v uint16) Call    { return Call(v &^ uint16(7<<13)) }
@@ -58,6 +82,19 @@ func (v Call) value() uint16   { return uint16(v) }
 func (v Call) compile() uint16 { return v.value() | (2 << 13) }
 
 // ALU instruction
+//
+//  15 14 13 12 11 10  9  8  7  6  5  4  3  2  1  0
+//   |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+//   |  |  |  |  |  |  |  |  |  |  |  |  |  |  `----- dstack ±
+//   |  |  |  |  |  |  |  |  |  |  |  |  `----------- rstack ±
+//   |  |  |  |  |  |  |  |  |  |  |  `-------------- unused
+//   |  |  |  |  |  |  |  |  |  |  `----------------- N → [T]
+//   |  |  |  |  |  |  |  |  |  `-------------------- T → R
+//   |  |  |  |  |  |  |  |  `----------------------- T → N
+//   |  |  |  |  `----------------------------------- T'
+//   |  |  |  `-------------------------------------- R → PC
+//   `----------------------------------------------- 0 1 1
+//
 type ALU struct {
 	Opcode uint16
 	RtoPC  bool
