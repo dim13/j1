@@ -43,11 +43,11 @@ func TestEval(t *testing.T) {
 			end: Core{pc: 0xff},
 		},
 		{
-			ins: []Instruction{Lit(1), Cond(0xff)},
+			ins: []Instruction{Literal(1), Conditional(0xff)},
 			end: Core{pc: 2},
 		},
 		{
-			ins: []Instruction{Lit(0), Cond(0xff)},
+			ins: []Instruction{Literal(0), Conditional(0xff)},
 			end: Core{pc: 0xff},
 		},
 		{
@@ -55,39 +55,39 @@ func TestEval(t *testing.T) {
 			end: Core{pc: 0xff, r: stack{data: [0x20]uint16{0x00, 0x02}, sp: 1}},
 		},
 		{
-			ins: []Instruction{Lit(0xff)},
+			ins: []Instruction{Literal(0xff)},
 			end: Core{pc: 1, st0: 0xff, d: stack{sp: 1}},
 		},
 		{
-			ins: []Instruction{Lit(0xff), Lit(0xfe)},
+			ins: []Instruction{Literal(0xff), Literal(0xfe)},
 			end: Core{pc: 2, st0: 0xfe, d: stack{data: [0x20]uint16{0x00, 0x00, 0xff}, sp: 2}},
 		},
 		{ // dup
-			ins: []Instruction{Lit(0xff), ALU{Opcode: opT, TtoN: true, Ddir: 1}},
+			ins: []Instruction{Literal(0xff), ALU{Opcode: opT, TtoN: true, Ddir: 1}},
 			end: Core{pc: 2, st0: 0xff, d: stack{data: [0x20]uint16{0x00, 0x00, 0xff}, sp: 2}},
 		},
 		{ // over
-			ins: []Instruction{Lit(0xaa), Lit(0xbb), ALU{Opcode: opN, TtoN: true, Ddir: 1}},
+			ins: []Instruction{Literal(0xaa), Literal(0xbb), ALU{Opcode: opN, TtoN: true, Ddir: 1}},
 			end: Core{pc: 3, st0: 0xaa, d: stack{data: [0x20]uint16{0x00, 0x00, 0xaa, 0xbb}, sp: 3}},
 		},
 		{ // invert
-			ins: []Instruction{Lit(0x00ff), ALU{Opcode: opNotT}},
+			ins: []Instruction{Literal(0x00ff), ALU{Opcode: opNotT}},
 			end: Core{pc: 2, st0: 0xff00, d: stack{sp: 1}},
 		},
 		{ // +
-			ins: []Instruction{Lit(1), Lit(2), ALU{Opcode: opTplusN, Ddir: -1}},
+			ins: []Instruction{Literal(1), Literal(2), ALU{Opcode: opTplusN, Ddir: -1}},
 			end: Core{pc: 3, st0: 3, d: stack{data: [0x20]uint16{0, 0, 1}, sp: 1}},
 		},
 		{ // swap
-			ins: []Instruction{Lit(2), Lit(3), ALU{Opcode: opN, TtoN: true}},
+			ins: []Instruction{Literal(2), Literal(3), ALU{Opcode: opN, TtoN: true}},
 			end: Core{pc: 3, st0: 2, d: stack{data: [0x20]uint16{0, 0, 3}, sp: 2}},
 		},
 		{ // nip
-			ins: []Instruction{Lit(2), Lit(3), ALU{Opcode: opT, Ddir: -1}},
+			ins: []Instruction{Literal(2), Literal(3), ALU{Opcode: opT, Ddir: -1}},
 			end: Core{pc: 3, st0: 3, d: stack{data: [0x20]uint16{0, 0, 2}, sp: 1}},
 		},
 		{ // drop
-			ins: []Instruction{Lit(2), Lit(3), ALU{Opcode: opN, Ddir: -1}},
+			ins: []Instruction{Literal(2), Literal(3), ALU{Opcode: opN, Ddir: -1}},
 			end: Core{pc: 3, st0: 2, d: stack{data: [0x20]uint16{0, 0, 2}, sp: 1}},
 		},
 		{ // ;
@@ -95,15 +95,15 @@ func TestEval(t *testing.T) {
 			end: Core{pc: 11, r: stack{data: [0x20]uint16{0, 2, 22}, sp: 1}},
 		},
 		{ // >r
-			ins: []Instruction{Lit(10), ALU{Opcode: opN, TtoR: true, Ddir: -1, Rdir: 1}},
+			ins: []Instruction{Literal(10), ALU{Opcode: opN, TtoR: true, Ddir: -1, Rdir: 1}},
 			end: Core{pc: 2, r: stack{data: [0x20]uint16{0, 10}, sp: 1}},
 		},
 		{ // r>
-			ins: []Instruction{Lit(10), Call(20), ALU{Opcode: opR, TtoN: true, TtoR: true, Ddir: 1, Rdir: -1}},
+			ins: []Instruction{Literal(10), Call(20), ALU{Opcode: opR, TtoN: true, TtoR: true, Ddir: 1, Rdir: -1}},
 			end: Core{pc: 21, st0: 4, d: stack{data: [0x20]uint16{0, 0, 10}, sp: 2}, r: stack{data: [0x20]uint16{10, 4}}},
 		},
 		{ // r@
-			ins: []Instruction{Lit(10), ALU{Opcode: opR, TtoN: true, TtoR: true, Ddir: 1}},
+			ins: []Instruction{Literal(10), ALU{Opcode: opR, TtoN: true, TtoR: true, Ddir: 1}},
 			end: Core{pc: 2, d: stack{data: [0x20]uint16{0, 0, 10}, sp: 2}, r: stack{data: [0x20]uint16{10}}},
 		},
 		{ // @
@@ -111,7 +111,7 @@ func TestEval(t *testing.T) {
 			end: Core{pc: 1},
 		},
 		{ // !
-			ins: []Instruction{Lit(1), Lit(0), ALU{Opcode: opN, NtoAtT: true, Ddir: -1}},
+			ins: []Instruction{Literal(1), Literal(0), ALU{Opcode: opN, NtoAtT: true, Ddir: -1}},
 			end: Core{pc: 3, st0: 1, d: stack{data: [0x20]uint16{0, 0, 1}, sp: 1}, memory: [0x2000]uint16{1}},
 		},
 	}

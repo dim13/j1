@@ -111,7 +111,7 @@ func (c *Core) Decode() Instruction {
 func (c *Core) Eval(ins Instruction) error {
 	c.pc++
 	switch v := ins.(type) {
-	case Lit:
+	case Literal:
 		c.d.push(c.st0)
 		c.st0 = v.value()
 	case Jump:
@@ -119,7 +119,7 @@ func (c *Core) Eval(ins Instruction) error {
 	case Call:
 		c.r.push(c.pc << 1)
 		c.pc = v.value()
-	case Cond:
+	case Conditional:
 		if c.st0 == 0 {
 			c.pc = v.value()
 		}

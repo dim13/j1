@@ -6,11 +6,11 @@ import "fmt"
 func Decode(v uint16) Instruction {
 	switch {
 	case v&(1<<15) == 1<<15:
-		return newLit(v)
+		return newLiteral(v)
 	case v&(7<<13) == 0<<13:
 		return newJump(v)
 	case v&(7<<13) == 1<<13:
-		return newCond(v)
+		return newConditional(v)
 	case v&(7<<13) == 2<<13:
 		return newCall(v)
 	case v&(7<<13) == 3<<13:
@@ -25,20 +25,20 @@ type Instruction interface {
 	compile() uint16
 }
 
-// Lit is a literal
+// Literal value
 //
 //  15 14 13 12 11 10  9  8  7  6  5  4  3  2  1  0
 //   │  └──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴── value
 //   └─────────────────────────────────────────────── 1
 //
-type Lit uint16
+type Literal uint16
 
-func newLit(v uint16) Lit     { return Lit(v &^ uint16(1<<15)) }
-func (v Lit) String() string  { return fmt.Sprintf("LIT %0.4X", uint16(v)) }
-func (v Lit) value() uint16   { return uint16(v) }
-func (v Lit) compile() uint16 { return v.value() | (1 << 15) }
+func newLiteral(v uint16) Literal { return Literal(v &^ uint16(1<<15)) }
+func (v Literal) String() string  { return fmt.Sprintf("LIT %0.4X", uint16(v)) }
+func (v Literal) value() uint16   { return uint16(v) }
+func (v Literal) compile() uint16 { return v.value() | (1 << 15) }
 
-// Jump is an unconditional branch
+// Jump instruction
 //
 //  15 14 13 12 11 10  9  8  7  6  5  4  3  2  1  0
 //   │  │  │  └──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴── target
@@ -51,20 +51,20 @@ func (v Jump) String() string  { return fmt.Sprintf("UBRANCH %0.4X", uint16(v<<1
 func (v Jump) value() uint16   { return uint16(v) }
 func (v Jump) compile() uint16 { return v.value() }
 
-// Cond is a conditional branch
+// Conditional jump instruction
 //
 //  15 14 13 12 11 10  9  8  7  6  5  4  3  2  1  0
 //   │  │  │  └──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴── target
 //   └──┴──┴───────────────────────────────────────── 0 0 1
 //
-type Cond uint16
+type Conditional uint16
 
-func newCond(v uint16) Cond    { return Cond(v &^ uint16(7<<13)) }
-func (v Cond) String() string  { return fmt.Sprintf("0BRANCH %0.4X", uint16(v<<1)) }
-func (v Cond) value() uint16   { return uint16(v) }
-func (v Cond) compile() uint16 { return v.value() | (1 << 13) }
+func newConditional(v uint16) Conditional { return Conditional(v &^ uint16(7<<13)) }
+func (v Conditional) String() string      { return fmt.Sprintf("0BRANCH %0.4X", uint16(v<<1)) }
+func (v Conditional) value() uint16       { return uint16(v) }
+func (v Conditional) compile() uint16     { return v.value() | (1 << 13) }
 
-// Call procedure
+// Call instruction
 //
 //  15 14 13 12 11 10  9  8  7  6  5  4  3  2  1  0
 //   │  │  │  └──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴── target
