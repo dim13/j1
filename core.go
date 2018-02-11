@@ -21,7 +21,7 @@ type Console interface {
 //
 // memory: 0x2000 words (16k) addressed by byte
 type Core struct {
-	memory  [0x2000]uint16 // 0..0x3fff main memory, 0x4000 .. 0xffff mem-mapped i/o
+	memory  [0x2000]uint16 // 0..0x3fff RAM, 0x4000..0x7fff mem-mapped I/O
 	pc      uint16         // 13 bit
 	st0     uint16         // top of data stack
 	d, r    stack          // data and return stacks
