@@ -18,8 +18,10 @@ type Console interface {
 }
 
 // Core of J1 Forth CPU
+//
+// memory: 0x2000 words (16k) addressed by byte
 type Core struct {
-	memory  [0x4000]uint16 // 0..0x3fff main memory, 0x4000 .. 0x7fff mem-mapped i/o
+	memory  [0x2000]uint16 // 0..0x3fff main memory, 0x4000 .. 0xffff mem-mapped i/o
 	pc      uint16         // 13 bit
 	st0     uint16         // top of data stack
 	d, r    stack          // data and return stacks
@@ -61,8 +63,10 @@ func (c *Core) String() string {
 	return s
 }
 
+const ioMask = 3 << 14
+
 func (c *Core) writeAt(addr, value uint16) error {
-	if off := int(addr >> 1); off < len(c.memory) {
+	if addr&ioMask == 0 {
 		c.memory[addr>>1] = value
 	}
 	switch addr {
@@ -75,8 +79,8 @@ func (c *Core) writeAt(addr, value uint16) error {
 }
 
 func (c *Core) readAt(addr uint16) uint16 {
-	if off := int(addr >> 1); off < len(c.memory) {
-		return c.memory[off]
+	if addr&ioMask == 0 {
+		return c.memory[addr>>1]
 	}
 	switch addr {
 	case 0xf000: // tx!
