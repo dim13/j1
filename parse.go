@@ -137,27 +137,27 @@ func (v ALU) value() uint16 {
 func (v ALU) compile() uint16 { return v.value() | (3 << 13) }
 
 const (
-	opT        = iota // 0
-	opN               // 1
-	opTplusN          // 2
-	opTandN           // 3
-	opTorN            // 4
-	opTxorN           // 5
-	opNotT            // 6
-	opNeqT            // 7
-	opNleT            // 8
-	opNrshiftT        // 9
-	opTminus1         // 10
-	opR               // 11
-	opAtT             // 12
-	opNlshiftT        // 13
-	opDepth           // 14
-	opNuleT           // 15
+	opT        = 0x0
+	opN        = 0x1
+	opTplusN   = 0x2
+	opTandN    = 0x3
+	opTorN     = 0x4
+	opTxorN    = 0x5
+	opNotT     = 0x6
+	opNeqT     = 0x7
+	opNleT     = 0x8
+	opNrshiftT = 0x9
+	opTminus1  = 0xa
+	opR        = 0xb
+	opAtT      = 0xc
+	opNlshiftT = 0xd
+	opDepth    = 0xe
+	opNuleT    = 0xf
 )
 
 var opcodeNames = []string{
-	"T", "N", "T+N", "T&N", "T|N", "T^N", "~T", "N==T",
-	"N<T", "N>>T", "T-1", "R", "[T]", "N<<T", "depth", "Nu<T",
+	"T", "N", "T+N", "T&N", "T|N", "T^N", "¬T", "N=T",
+	"N<T", "N≫T", "T-1", "R", "[T]", "N≪T", "depth", "Nu<T",
 }
 
 func (v ALU) String() string {
