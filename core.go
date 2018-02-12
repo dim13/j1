@@ -99,21 +99,21 @@ func (c *Core) readAt(addr uint16) uint16 {
 // Run evaluates content of memory
 func (c *Core) Run() {
 	for {
-		ins := c.Decode()
-		err := c.Evaluate(ins)
+		ins := c.Fetch()
+		err := c.Execute(ins)
 		if err == ErrStop {
 			return
 		}
 	}
 }
 
-// Decode instruction at current program counter position
-func (c *Core) Decode() Instruction {
+// Fetch instruction at current program counter position
+func (c *Core) Fetch() Instruction {
 	return Decode(c.memory[c.pc])
 }
 
-// Evaluate instruction
-func (c *Core) Evaluate(ins Instruction) error {
+// Execute instruction
+func (c *Core) Execute(ins Instruction) error {
 	c.pc++
 	switch v := ins.(type) {
 	case Literal:
