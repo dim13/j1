@@ -120,7 +120,7 @@ func TestEval(t *testing.T) {
 		t.Run(fmt.Sprint(tc.ins), func(t *testing.T) {
 			state := New(&mocConsole{})
 			for _, ins := range tc.ins {
-				state.Eval(ins)
+				state.Evaluate(ins)
 			}
 			cmp(t, *state, tc.end)
 		})

@@ -100,20 +100,20 @@ func (c *Core) readAt(addr uint16) uint16 {
 func (c *Core) Run() {
 	for {
 		ins := c.Decode()
-		err := c.Eval(ins)
+		err := c.Evaluate(ins)
 		if err == ErrStop {
 			return
 		}
 	}
 }
 
-// Decode instruction
+// Decode instruction at current program counter position
 func (c *Core) Decode() Instruction {
 	return Decode(c.memory[c.pc])
 }
 
-// Eval instruction
-func (c *Core) Eval(ins Instruction) error {
+// Evaluate instruction
+func (c *Core) Evaluate(ins Instruction) error {
 	c.pc++
 	switch v := ins.(type) {
 	case Literal:
