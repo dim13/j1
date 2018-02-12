@@ -5,15 +5,15 @@ import "fmt"
 // Decode instruction
 func Decode(v uint16) Instruction {
 	switch {
-	case v&(1<<15) == 1<<15:
+	case isLiteral(v):
 		return newLiteral(v)
-	case v&(7<<13) == 0<<13:
+	case isJump(v):
 		return newJump(v)
-	case v&(7<<13) == 1<<13:
+	case isConditional(v):
 		return newConditional(v)
-	case v&(7<<13) == 2<<13:
+	case isCall(v):
 		return newCall(v)
-	case v&(7<<13) == 3<<13:
+	case isALU(v):
 		return newALU(v)
 	}
 	return nil
@@ -34,6 +34,7 @@ type Instruction interface {
 type Literal uint16
 
 func newLiteral(v uint16) Literal { return Literal(v &^ uint16(1<<15)) }
+func isLiteral(v uint16) bool     { return v&(1<<15) == 1<<15 }
 func (v Literal) String() string  { return fmt.Sprintf("LIT %0.4X", uint16(v)) }
 func (v Literal) value() uint16   { return uint16(v) }
 func (v Literal) compile() uint16 { return v.value() | (1 << 15) }
@@ -47,6 +48,7 @@ func (v Literal) compile() uint16 { return v.value() | (1 << 15) }
 type Jump uint16
 
 func newJump(v uint16) Jump    { return Jump(v &^ uint16(7<<13)) }
+func isJump(v uint16) bool     { return v&(7<<13) == 0<<13 }
 func (v Jump) String() string  { return fmt.Sprintf("UBRANCH %0.4X", uint16(v<<1)) }
 func (v Jump) value() uint16   { return uint16(v) }
 func (v Jump) compile() uint16 { return v.value() }
@@ -60,6 +62,7 @@ func (v Jump) compile() uint16 { return v.value() }
 type Conditional uint16
 
 func newConditional(v uint16) Conditional { return Conditional(v &^ uint16(7<<13)) }
+func isConditional(v uint16) bool         { return v&(7<<13) == 1<<13 }
 func (v Conditional) String() string      { return fmt.Sprintf("0BRANCH %0.4X", uint16(v<<1)) }
 func (v Conditional) value() uint16       { return uint16(v) }
 func (v Conditional) compile() uint16     { return v.value() | (1 << 13) }
@@ -73,6 +76,7 @@ func (v Conditional) compile() uint16     { return v.value() | (1 << 13) }
 type Call uint16
 
 func newCall(v uint16) Call    { return Call(v &^ uint16(7<<13)) }
+func isCall(v uint16) bool     { return v&(7<<13) == 2<<13 }
 func (v Call) String() string  { return fmt.Sprintf("CALL %0.4X", uint16(v<<1)) }
 func (v Call) value() uint16   { return uint16(v) }
 func (v Call) compile() uint16 { return v.value() | (2 << 13) }
@@ -114,6 +118,8 @@ func newALU(v uint16) ALU {
 		Ddir:   expand[(v>>0)&3],
 	}
 }
+
+func isALU(v uint16) bool { return v&(7<<13) == 3<<13 }
 
 func (v ALU) value() uint16 {
 	ret := v.Opcode << 8
