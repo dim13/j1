@@ -17,6 +17,11 @@ type Console interface {
 	Len() uint16
 }
 
+type io interface {
+	readAt(addr uint16) uint16
+	writeAt(addr uint16, value uint16)
+}
+
 // Core of J1 Forth CPU
 //
 //  33 deep × 16 bit data stack
@@ -130,7 +135,7 @@ func (c *Core) Execute(ins Instruction) error {
 		}
 		c.st0 = c.d.pop()
 	case ALU:
-		if v.RtoPC {
+		if v.Ret {
 			c.pc = c.r.peek() >> 1
 		}
 		if v.NtoAtT {
@@ -158,40 +163,40 @@ var boolValue = map[bool]uint16{
 	true:  ^uint16(0),
 }
 
-func (c *Core) newST0(opcode uint16) uint16 {
+func (c *Core) newST0(opcode Opcode) uint16 {
 	T, N, R := c.st0, c.d.peek(), c.r.peek()
 	switch opcode {
-	case opT: // T
+	case OpT: // T
 		return T
-	case opN: // N
+	case OpN: // N
 		return N
-	case opTplusN: // T+N
+	case OpTplusN: // T+N
 		return T + N
-	case opTandN: // T&N
+	case OpTandN: // T&N
 		return T & N
-	case opTorN: // T|N
+	case OpTorN: // T|N
 		return T | N
-	case opTxorN: // T^N
+	case OpTxorN: // T^N
 		return T ^ N
-	case opNotT: // ~T
+	case OpNotT: // ~T
 		return ^T
-	case opNeqT: // N==T
+	case OpNeqT: // N==T
 		return boolValue[N == T]
-	case opNleT: // N<T
+	case OpNleT: // N<T
 		return boolValue[int16(N) < int16(T)]
-	case opNrshiftT: // N>>T
+	case OpNrshiftT: // N>>T
 		return N >> (T & 0xf)
-	case opTminus1: // T-1
-		return T - 1
-	case opR: // R (rT)
-		return R
-	case opAtT: // [T]
-		return c.readAt(T)
-	case opNlshiftT: // N<<T
+	case OpNlshiftT: // N<<T
 		return N << (T & 0xf)
-	case opDepth: // depth (dsp)
+	case OpR: // R (rT)
+		return R
+	case OpAtT: // [T]
+		return c.readAt(T)
+	case OpIoAtT: // io[T]
+		return c.readAt(T)
+	case OpStatus: // depth (dsp)
 		return (c.r.depth() << 8) | c.d.depth()
-	case opNuleT: // Nu<T
+	case OpNuLeT: // Nu<T
 		return boolValue[N < T]
 	default:
 		panic("invalid instruction")

@@ -5,6 +5,14 @@ type stack struct {
 	sp   int8         // 5 bit stack pointer
 }
 
+func (s *stack) readAt(addr uint16) uint16 {
+	return s.data[int(addr)]
+}
+
+func (s *stack) writeAt(addr, value uint16) {
+	s.data[int(addr)] = value
+}
+
 func (s *stack) move(dir int8) {
 	s.sp = (s.sp + dir) & 0x1f
 }

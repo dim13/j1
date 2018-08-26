@@ -89,22 +89,26 @@ func (v Call) compile() uint16 { return v.value() | (2 << 13) }
 // ALU instruction
 //
 //  15 14 13 12 11 10  9  8  7  6  5  4  3  2  1  0
-//   │  │  │  │  │  │  │  │  │  │  │  │  │  │  └──┴── dstack ±
-//   │  │  │  │  │  │  │  │  │  │  │  │  └──┴──────── rstack ±
-//   │  │  │  │  │  │  │  │  │  │  │  └────────────── unused
-//   │  │  │  │  │  │  │  │  │  │  └───────────────── N → [T]
-//   │  │  │  │  │  │  │  │  │  └──────────────────── T → R
-//   │  │  │  │  │  │  │  │  └─────────────────────── T → N
-//   │  │  │  │  └──┴──┴──┴────────────────────────── Tʹ
-//   │  │  │  └────────────────────────────────────── R → PC
+//   │  │  │  │  │  │  │  │  │  │  │  │  │  │  └──┴── dstack ± (see below)
+//   │  │  │  │  │  │  │  │  │  │  │  │  └──┴──────── rstack ± (see below)
+//   │  │  │  │  │  │  │  │  │  └──┴──┴────────────── modifier (see below)
+//   │  │  │  │  │  │  │  │  └─────────────────────── RET
+//   │  │  │  │  └──┴──┴──┴────────────────────────── opcode
+//   │  │  │  └────────────────────────────────────── unused
 //   └──┴──┴───────────────────────────────────────── 0 1 1
 //
+// Bits
+//
+//  654 modifier	32 rstack	10 dstack
+//  001 = 1 T → N	01 +1		01 +1
+//  010 = 2 T → R	10 -2		10 -2
+//  011 = 3 N → [T]	11 -1		11 -1
+//  100 = 4 N → io[T]
+//
 type ALU struct {
-	Opcode uint16
-	RtoPC  bool
-	TtoN   bool
-	TtoR   bool
-	NtoAtT bool
+	Opcode Opcode
+	Ret    bool
+	Mod    Modifier
 	Rdir   int8
 	Ddir   int8
 }
@@ -112,13 +116,20 @@ type ALU struct {
 // expand 2 bit unsigned to 8 bit signed
 var expand = map[uint16]int8{0: 0, 1: 1, 2: -2, 3: -1}
 
+type Modifier uint8
+
+const (
+	ModTtoN     Modifier = 1
+	ModTtoR     Modifier = 2
+	ModNtoAtT   Modifier = 3
+	ModNtoIoAtT Modifier = 4
+)
+
 func newALU(v uint16) ALU {
 	return ALU{
-		Opcode: (v >> 8) & 15,
-		RtoPC:  v&(1<<12) != 0,
-		TtoN:   v&(1<<7) != 0,
-		TtoR:   v&(1<<6) != 0,
-		NtoAtT: v&(1<<5) != 0,
+		Opcode: Opcode((v >> 8) & 15),
+		Ret:    v&(1<<7) != 0,
+		Mod:    Modifier((v >> 4) & 7),
 		Rdir:   expand[(v>>2)&3],
 		Ddir:   expand[(v>>0)&3],
 	}
@@ -127,19 +138,11 @@ func newALU(v uint16) ALU {
 func isALU(v uint16) bool { return v&(7<<13) == 3<<13 }
 
 func (v ALU) value() uint16 {
-	ret := v.Opcode << 8
-	if v.RtoPC {
-		ret |= 1 << 12
-	}
-	if v.TtoN {
+	ret := uint16(v.Opcode) << 8
+	if v.Ret {
 		ret |= 1 << 7
 	}
-	if v.TtoR {
-		ret |= 1 << 6
-	}
-	if v.NtoAtT {
-		ret |= 1 << 5
-	}
+	ret |= uint16(v.Mod) << 4
 	ret |= uint16(v.Rdir&3) << 2
 	ret |= uint16(v.Ddir&3) << 0
 	return ret
@@ -147,44 +150,42 @@ func (v ALU) value() uint16 {
 
 func (v ALU) compile() uint16 { return v.value() | (3 << 13) }
 
+type Opcode uint16
+
 const (
-	opT        = 0x0
-	opN        = 0x1
-	opTplusN   = 0x2
-	opTandN    = 0x3
-	opTorN     = 0x4
-	opTxorN    = 0x5
-	opNotT     = 0x6
-	opNeqT     = 0x7
-	opNleT     = 0x8
-	opNrshiftT = 0x9
-	opTminus1  = 0xa
-	opR        = 0xb
-	opAtT      = 0xc
-	opNlshiftT = 0xd
-	opDepth    = 0xe
-	opNuleT    = 0xf
+	OpT        Opcode = 0
+	OpN        Opcode = 1
+	OpTplusN   Opcode = 2
+	OpTandN    Opcode = 3
+	OpTorN     Opcode = 4
+	OpTxorN    Opcode = 5
+	OpNotT     Opcode = 6
+	OpNeqT     Opcode = 7
+	OpNleT     Opcode = 8
+	OpNrshiftT Opcode = 9
+	OpNlshiftT Opcode = 10
+	OpR        Opcode = 11
+	OpAtT      Opcode = 12
+	OpIoAtT    Opcode = 13
+	OpStatus   Opcode = 14
+	OpNuLeT    Opcode = 15
 )
 
 var opcodeNames = []string{
 	"T", "N", "T+N", "T∧N", "T∨N", "T⊻N", "¬T", "N=T",
-	"N<T", "N≫T", "T-1", "R", "[T]", "N≪T", "depth", "Nu<T",
+	"N<T", "N≫T", "N≪T", "R", "[T]", "io[T]", "status", "Nu<T",
+}
+
+var modNames = []string{
+	"", "T→N", "T→R", "N→[T]", "N→io[T]",
 }
 
 func (v ALU) String() string {
-	s := "ALU " + opcodeNames[v.Opcode]
-	if v.RtoPC {
-		s += " R→PC"
+	s := "ALU " + opcodeNames[int(v.Opcode)]
+	if v.Ret {
+		s += " Ret"
 	}
-	if v.TtoN {
-		s += " T→N"
-	}
-	if v.TtoR {
-		s += " T→R"
-	}
-	if v.NtoAtT {
-		s += " N→[T]"
-	}
+	s += modNames[int(v.Mod)]
 	if v.Rdir != 0 {
 		s += fmt.Sprintf(" r%+d", v.Rdir)
 	}
