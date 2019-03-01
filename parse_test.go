@@ -39,7 +39,7 @@ func TestDecode(t *testing.T) {
 			if ins != tc.ins {
 				t.Errorf("got %v, want %v", ins, tc.ins)
 			}
-			if v := ins.compile(); v != tc.bin {
+			if v := Encode(ins); v != tc.bin {
 				t.Errorf("got %v, want %v", v, tc.bin)
 			}
 		})

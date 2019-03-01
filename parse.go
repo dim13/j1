@@ -2,7 +2,7 @@ package j1
 
 import "fmt"
 
-// Decode instruction
+// Decode instruction from binary form
 func Decode(v uint16) Instruction {
 	switch {
 	case isLiteral(v):
@@ -17,6 +17,11 @@ func Decode(v uint16) Instruction {
 		return newALU(v)
 	}
 	return nil
+}
+
+// Encode instruction to binary form
+func Encode(i Instruction) uint16 {
+	return i.compile()
 }
 
 // Instruction interface
