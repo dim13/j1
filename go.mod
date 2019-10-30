@@ -1,3 +1,3 @@
-module dim13.org/j1
+module github.com/dim13/j1
 
 go 1.13

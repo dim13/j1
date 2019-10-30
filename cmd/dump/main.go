@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"dim13.org/j1"
+	"github.com/dim13/j1"
 )
 
 func main() {

@@ -5,8 +5,8 @@ package main
 import (
 	"os"
 
-	"dim13.org/j1"
-	"dim13.org/j1/console"
+	"github.com/dim13/j1"
+	"github.com/dim13/j1/console"
 )
 
 func main() {
