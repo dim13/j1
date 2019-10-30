@@ -138,7 +138,7 @@ func (c *Core) Execute(ins Instruction) error {
 		if v.Ret {
 			c.pc = c.r.peek() >> 1
 		}
-		if v.NtoAtT {
+		if v.Mod&ModNtoAtT != 0 {
 			err := c.writeAt(c.st0, c.d.peek())
 			if err != nil {
 				return err
@@ -147,10 +147,10 @@ func (c *Core) Execute(ins Instruction) error {
 		st0 := c.newST0(v.Opcode)
 		c.d.move(v.Ddir)
 		c.r.move(v.Rdir)
-		if v.TtoN {
+		if v.Mod&ModTtoN != 0 {
 			c.d.replace(c.st0)
 		}
-		if v.TtoR {
+		if v.Mod&ModTtoR != 0 {
 			c.r.replace(c.st0)
 		}
 		c.st0 = st0
