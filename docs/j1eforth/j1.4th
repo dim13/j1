@@ -94,8 +94,8 @@ a: literal
 variable tlast
 variable tuser
 
-0002 constant =major
-0000 constant =minor
+0001 constant =major
+0004 constant =minor
 0040 constant =comp
 0080 constant =imed
 7f1f constant =mask
