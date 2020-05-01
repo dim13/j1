@@ -53,7 +53,7 @@ func (v Literal) compile() uint16 { return v.value() | (1 << 15) }
 type Jump uint16
 
 func newJump(v uint16) Jump    { return Jump(v &^ uint16(7<<13)) }
-func isJump(v uint16) bool     { return v&(7<<13) == 0<<13 }
+func isJump(v uint16) bool     { return v&(7<<13) == 0 }
 func (v Jump) String() string  { return fmt.Sprintf("UBRANCH %0.4X", uint16(v<<1)) }
 func (v Jump) value() uint16   { return uint16(v) }
 func (v Jump) compile() uint16 { return v.value() }
@@ -110,7 +110,7 @@ type ALU struct {
 }
 
 // expand 2 bit unsigned to 8 bit signed
-var expand = map[uint16]int8{0: 0, 1: 1, 2: -2, 3: -1}
+var expand = []int8{0, 1, -2, -1}
 
 func newALU(v uint16) ALU {
 	return ALU{
@@ -148,27 +148,27 @@ func (v ALU) value() uint16 {
 func (v ALU) compile() uint16 { return v.value() | (3 << 13) }
 
 const (
-	opT        = 0x0
-	opN        = 0x1
-	opTplusN   = 0x2
-	opTandN    = 0x3
-	opTorN     = 0x4
-	opTxorN    = 0x5
-	opNotT     = 0x6
-	opNeqT     = 0x7
-	opNleT     = 0x8
-	opNrshiftT = 0x9
-	opTminus1  = 0xa
-	opR        = 0xb
-	opAtT      = 0xc
-	opNlshiftT = 0xd
-	opDepth    = 0xe
-	opNuleT    = 0xf
+	opT = iota
+	opN
+	opTplusN
+	opTandN
+	opTorN
+	opTxorN
+	opNotT
+	opNeqT
+	opNleT
+	opNrshiftT
+	opTminus1
+	opR
+	opAtT
+	opNlshiftT
+	opDepth
+	opNuleT
 )
 
 var opcodeNames = []string{
 	"T", "N", "T+N", "T∧N", "T∨N", "T⊻N", "¬T", "N=T",
-	"N<T", "N≫T", "T-1", "R", "[T]", "N≪T", "depth", "Nu<T",
+	"N<T", "N≫T", "T-1", "R", "[T]", "N≪T", "D", "Nu<T",
 }
 
 func (v ALU) String() string {
