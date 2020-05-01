@@ -5,11 +5,13 @@ import (
 	"io"
 )
 
+// Console I/O
 type Console struct {
 	ich, och chan uint16
 	done     chan struct{}
 }
 
+// New console
 func New(w io.Writer, r io.Reader) *Console {
 	c := &Console{
 		ich:  make(chan uint16, 1),
@@ -49,7 +51,14 @@ func (c *Console) write(w io.Writer) {
 	}
 }
 
-func (c *Console) Read() uint16   { return <-c.ich }
+// Read from console
+func (c *Console) Read() uint16 { return <-c.ich }
+
+// Write to console
 func (c *Console) Write(v uint16) { c.och <- v }
-func (c *Console) Len() uint16    { return uint16(len(c.ich)) }
-func (c *Console) Stop()          { close(c.done) }
+
+// Len of input buffer
+func (c *Console) Len() uint16 { return uint16(len(c.ich)) }
+
+// Stop console
+func (c *Console) Stop() { close(c.done) }

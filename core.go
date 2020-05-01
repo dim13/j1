@@ -8,7 +8,11 @@ import (
 	"io/ioutil"
 )
 
-var ErrStop = errors.New("stop")
+// Core Errors
+var (
+	ErrStop   = errors.New("stop")
+	ErrTooBig = errors.New("too big")
+)
 
 // Console i/o
 type Console interface {
@@ -26,11 +30,11 @@ type Console interface {
 //  0..0x3fff RAM, 0x4000..0x7fff mem-mapped I/O
 //
 type Core struct {
-	memory  [0x2000]uint16 // 0..0x3fff RAM, 0x4000..0x7fff mem-mapped I/O
-	pc      uint16         // 13 bit
-	st0     uint16         // top of data stack
-	d, r    stack          // data and return stacks
-	console Console        // console i/o
+	memory  [8192]uint16 // 0..0x3fff RAM, 0x4000..0x7fff mem-mapped I/O
+	pc      uint16       // 13 bit
+	st0     uint16       // top of data stack
+	d, r    stack        // data and return stacks
+	console Console      // console i/o
 }
 
 // New core with console i/o
@@ -47,7 +51,7 @@ func (c *Core) Reset() {
 func (c *Core) LoadBytes(data []byte) error {
 	size := len(data) >> 1
 	if size >= len(c.memory) {
-		return errors.New("too big")
+		return ErrTooBig
 	}
 	return binary.Read(bytes.NewReader(data), binary.LittleEndian, c.memory[:size])
 }
