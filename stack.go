@@ -1,8 +1,8 @@
 package j1
 
 type stack struct {
-	data [0x20]uint16 // stack
-	sp   int8         // 5 bit stack pointer
+	data [32]uint16 // stack
+	sp   int8       // 5 bit stack pointer
 }
 
 func (s *stack) move(dir int8) {
