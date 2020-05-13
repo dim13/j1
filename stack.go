@@ -33,5 +33,5 @@ func (s *stack) depth() uint16 {
 }
 
 func (s *stack) dump() []uint16 {
-	return s.data[:s.sp+1]
+	return s.data[1 : s.sp+1]
 }
