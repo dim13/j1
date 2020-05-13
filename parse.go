@@ -15,8 +15,9 @@ func Decode(v uint16) Instruction {
 		return newCall(v)
 	case isALU(v):
 		return newALU(v)
+	default:
+		panic("invalid instruction")
 	}
-	return nil
 }
 
 // Encode instruction to binary form
