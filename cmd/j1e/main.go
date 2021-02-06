@@ -1,16 +1,19 @@
 package main
 
-//go:generate file2go -in ../../testdata/j1e.bin
-
 import (
+	_ "embed"
+
 	"github.com/dim13/j1"
 	"github.com/dim13/j1/console"
 )
+
+//go:embed j1e.bin
+var eForth []byte
 
 func main() {
 	con := console.New()
 	defer con.Stop()
 	vm := j1.New(con)
-	vm.LoadBytes(J1eBin)
+	vm.LoadBytes(eForth)
 	vm.Run()
 }
