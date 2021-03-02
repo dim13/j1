@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 )
 
 // Core Errors
@@ -58,7 +58,7 @@ func (c *Core) LoadBytes(data []byte) error {
 
 // LoadFile into memory
 func (c *Core) LoadFile(fname string) error {
-	data, err := ioutil.ReadFile(fname)
+	data, err := os.ReadFile(fname)
 	if err != nil {
 		return err
 	}
