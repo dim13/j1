@@ -1,10 +1,6 @@
 package console
 
-import (
-	"fmt"
-	"io"
-	"os"
-)
+import "fmt"
 
 // Console I/O
 type Console struct {
@@ -19,19 +15,16 @@ func New() *Console {
 		out:  make(chan uint16, 1),
 		done: make(chan struct{}),
 	}
-	go c.write(os.Stdout)
-	go c.read(os.Stdin)
+	go c.write()
+	go c.read()
 	return c
 }
 
-func (c *Console) read(r io.Reader) {
-	var v uint16
+func (c *Console) read() {
 	defer close(c.in)
 	for {
-		_, err := fmt.Fscanf(r, "%c", &v)
-		if err == io.EOF {
-			return
-		}
+		var v uint16
+		fmt.Scanf("%c", &v)
 		select {
 		case <-c.done:
 			return
@@ -40,14 +33,14 @@ func (c *Console) read(r io.Reader) {
 	}
 }
 
-func (c *Console) write(w io.Writer) {
+func (c *Console) write() {
 	defer close(c.out)
 	for {
 		select {
 		case <-c.done:
 			return
 		case v := <-c.out:
-			fmt.Fprintf(w, "%c", v)
+			fmt.Printf("%c", v)
 		}
 	}
 }
