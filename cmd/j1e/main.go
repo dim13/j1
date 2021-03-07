@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	_ "embed"
 
 	"github.com/dim13/j1"
@@ -11,9 +12,8 @@ import (
 var eForth []byte
 
 func main() {
-	con := console.New()
-	defer con.Stop()
+	ctx, con := console.New(context.Background())
 	vm := j1.New(con)
 	vm.LoadBytes(eForth)
-	vm.Run()
+	vm.Run(ctx)
 }

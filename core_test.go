@@ -32,6 +32,7 @@ type mocConsole struct{}
 func (m *mocConsole) Read() uint16 { return 0 }
 func (m *mocConsole) Write(uint16) {}
 func (m *mocConsole) Len() uint16  { return 0 }
+func (m *mocConsole) Stop()        {}
 
 func TestEval(t *testing.T) {
 	testCases := []struct {

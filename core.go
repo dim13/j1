@@ -2,16 +2,10 @@ package j1
 
 import (
 	"bytes"
+	"context"
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"os"
-)
-
-// Core Errors
-var (
-	ErrStop   = errors.New("stop")
-	ErrTooBig = errors.New("too big")
 )
 
 // Console i/o
@@ -19,6 +13,7 @@ type Console interface {
 	Read() uint16
 	Write(uint16)
 	Len() uint16
+	Stop()
 }
 
 // Core of J1 Forth CPU
@@ -51,7 +46,7 @@ func (c *Core) Reset() {
 func (c *Core) LoadBytes(data []byte) error {
 	size := len(data) >> 1
 	if size >= len(c.memory) {
-		return ErrTooBig
+		return fmt.Errorf("data size %v > memory size %v", size, len(c.memory))
 	}
 	return binary.Read(bytes.NewReader(data), binary.LittleEndian, c.memory[:size])
 }
@@ -74,7 +69,7 @@ func (c *Core) String() string {
 
 const ioMask = 3 << 14
 
-func (c *Core) writeAt(addr, value uint16) error {
+func (c *Core) writeAt(addr, value uint16) {
 	if addr&ioMask == 0 {
 		c.memory[addr>>1] = value
 	}
@@ -82,9 +77,8 @@ func (c *Core) writeAt(addr, value uint16) error {
 	case 0x7000: // key
 		c.console.Write(value)
 	case 0x7002: // bye
-		return ErrStop
+		c.console.Stop()
 	}
-	return nil
 }
 
 func (c *Core) readAt(addr uint16) uint16 {
@@ -101,12 +95,13 @@ func (c *Core) readAt(addr uint16) uint16 {
 }
 
 // Run evaluates content of memory
-func (c *Core) Run() {
+func (c *Core) Run(ctx context.Context) {
 	for {
-		ins := c.Fetch()
-		err := c.Execute(ins)
-		if err == ErrStop {
+		select {
+		case <-ctx.Done():
 			return
+		default:
+			c.Execute(c.Fetch())
 		}
 	}
 }
@@ -117,7 +112,7 @@ func (c *Core) Fetch() Instruction {
 }
 
 // Execute instruction
-func (c *Core) Execute(ins Instruction) error {
+func (c *Core) Execute(ins Instruction) {
 	c.pc++
 	switch v := ins.(type) {
 	case Literal:
@@ -138,10 +133,7 @@ func (c *Core) Execute(ins Instruction) error {
 			c.pc = c.r.peek() >> 1
 		}
 		if v.NtoAtT {
-			err := c.writeAt(c.st0, c.d.peek())
-			if err != nil {
-				return err
-			}
+			c.writeAt(c.st0, c.d.peek())
 		}
 		st0 := c.newST0(v.Opcode)
 		c.d.move(v.Ddir)
@@ -154,7 +146,6 @@ func (c *Core) Execute(ins Instruction) error {
 		}
 		c.st0 = st0
 	}
-	return nil
 }
 
 var boolValue = map[bool]uint16{
