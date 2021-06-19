@@ -165,10 +165,10 @@ func TestNextST0(t *testing.T) {
 	}
 }
 
-func TestLoadBytes(t *testing.T) {
+func TestWrite(t *testing.T) {
 	data := []byte{1, 2, 4, 8}
 	j1 := New(&mocConsole{})
-	if err := j1.LoadBytes(data); err != nil {
+	if _, err := j1.Write(data); err != nil {
 		t.Fatal(err)
 	}
 	expect := [8192]uint16{0x0201, 0x0804}

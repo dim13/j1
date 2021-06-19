@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
-	"os"
 )
 
 // Console i/o
@@ -42,22 +41,13 @@ func (c *Core) Reset() {
 	c.pc, c.st0, c.d.sp, c.r.sp = 0, 0, 0, 0
 }
 
-// LoadBytes into memory
-func (c *Core) LoadBytes(data []byte) error {
+// Write memory
+func (c *Core) Write(data []byte) (int, error) {
 	size := len(data) >> 1
 	if size >= len(c.memory) {
-		return fmt.Errorf("data size %v > memory size %v", size, len(c.memory))
+		return 0, fmt.Errorf("data size %v > memory size %v", size, len(c.memory))
 	}
-	return binary.Read(bytes.NewReader(data), binary.LittleEndian, c.memory[:size])
-}
-
-// LoadFile into memory
-func (c *Core) LoadFile(fname string) error {
-	data, err := os.ReadFile(fname)
-	if err != nil {
-		return err
-	}
-	return c.LoadBytes(data)
+	return len(data), binary.Read(bytes.NewReader(data), binary.LittleEndian, c.memory[:size])
 }
 
 func (c *Core) String() string {

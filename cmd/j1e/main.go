@@ -14,6 +14,6 @@ var eForth []byte
 func main() {
 	ctx, con := console.New(context.Background())
 	vm := j1.New(con)
-	vm.LoadBytes(eForth)
+	vm.Write(eForth)
 	vm.Run(ctx)
 }
