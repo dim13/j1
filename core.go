@@ -17,12 +17,11 @@ type Console interface {
 
 // Core of J1 Forth CPU
 //
-//  33 deep × 16 bit data stack
-//  32 deep × 16 bit return stack
-//  13 bit program counter
-//  memory is 16 bit wide and addressed by bytes
-//  0..0x3fff RAM, 0x4000..0x7fff mem-mapped I/O
-//
+//	33 deep × 16 bit data stack
+//	32 deep × 16 bit return stack
+//	13 bit program counter
+//	memory is 16 bit wide and addressed by bytes
+//	0..0x3fff RAM, 0x4000..0x7fff mem-mapped I/O
 type Core struct {
 	memory  [8192]uint16 // 0..0x3fff RAM, 0x4000..0x7fff mem-mapped I/O
 	pc      uint16       // 13 bit
