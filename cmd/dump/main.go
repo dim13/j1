@@ -14,19 +14,20 @@ func main() {
 		panic(err)
 	}
 	for i, v := range body {
-		hi, lo := v>>8, v&0xff
-		if hi < 0x20 || hi >= 0x7f {
-			hi = 0x20
-		}
-		if lo < 0x20 || lo >= 0x7f {
-			lo = 0x20
-		}
+		hi, lo := ascii(uint8(v>>8)), ascii(uint8(v))
 		ins := j1.Decode(v)
 		fmt.Printf("%0.4X %0.4X [%c%c]\t%s\n", 2*i, v, lo, hi, ins)
 		if alu, ok := ins.(j1.ALU); ok && alu.RtoPC {
 			fmt.Printf("\n")
 		}
 	}
+}
+
+func ascii(x uint8) uint8 {
+	if x >= 0x20 && x < 0x7f {
+		return x
+	}
+	return 0x20
 }
 
 // ReadBin file
