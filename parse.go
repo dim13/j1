@@ -53,7 +53,7 @@ type Jump uint16
 
 func newJump(v uint16) Jump    { return Jump(v &^ uint16(7<<13)) }
 func isJump(v uint16) bool     { return v&(7<<13) == 0 }
-func (v Jump) String() string  { return fmt.Sprintf("UBRANCH %0.4X", uint16(v<<1)) }
+func (v Jump) String() string  { return fmt.Sprintf("JUMP %0.4X", uint16(v<<1)) }
 func (v Jump) value() uint16   { return uint16(v) }
 func (v Jump) compile() uint16 { return v.value() }
 
@@ -66,7 +66,7 @@ type Conditional uint16
 
 func newConditional(v uint16) Conditional { return Conditional(v &^ uint16(7<<13)) }
 func isConditional(v uint16) bool         { return v&(7<<13) == 1<<13 }
-func (v Conditional) String() string      { return fmt.Sprintf("0BRANCH %0.4X", uint16(v<<1)) }
+func (v Conditional) String() string      { return fmt.Sprintf("IF T=0 JUMP %0.4X", uint16(v<<1)) }
 func (v Conditional) value() uint16       { return uint16(v) }
 func (v Conditional) compile() uint16     { return v.value() | (1 << 13) }
 
@@ -168,7 +168,7 @@ var opcodeNames = []string{
 }
 
 func (v ALU) String() string {
-	s := "ALU " + opcodeNames[v.Opcode]
+	s := "T ← " + opcodeNames[v.Opcode]
 	if v.RtoPC {
 		s += " R→PC"
 	}

@@ -14,7 +14,18 @@ func main() {
 		panic(err)
 	}
 	for i, v := range body {
-		fmt.Printf("%0.4X %0.4X\t%s\n", 2*i, v, j1.Decode(v))
+		hi, lo := v>>8, v&0xff
+		if hi < 0x20 || hi >= 0x7f {
+			hi = 0x20
+		}
+		if lo < 0x20 || lo >= 0x7f {
+			lo = 0x20
+		}
+		ins := j1.Decode(v)
+		fmt.Printf("%0.4X %0.4X [%c%c]\t%s\n", 2*i, v, lo, hi, ins)
+		if alu, ok := ins.(j1.ALU); ok && alu.RtoPC {
+			fmt.Printf("\n")
+		}
 	}
 }
 
