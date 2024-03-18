@@ -142,7 +142,7 @@ var boolValue = map[bool]uint16{
 	true:  ^uint16(0),
 }
 
-func (c *Core) newST0(opcode uint16) uint16 {
+func (c *Core) newST0(opcode Op) uint16 {
 	T, N, R := c.st0, c.d.peek(), c.r.peek()
 	switch opcode {
 	case opT: // T

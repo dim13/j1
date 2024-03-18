@@ -96,7 +96,7 @@ func (v Call) compile() uint16 { return v.value() | (2 << 13) }
 //	 │  │  │  └────────────────────────────────────── R → PC
 //	 └──┴──┴───────────────────────────────────────── 0 1 1
 type ALU struct {
-	Opcode uint16
+	Opcode Op
 	RtoPC  bool
 	TtoN   bool
 	TtoR   bool
@@ -110,7 +110,7 @@ var expand = []int8{0, 1, -2, -1}
 
 func newALU(v uint16) ALU {
 	return ALU{
-		Opcode: (v >> 8) & 15,
+		Opcode: Op(v>>8) & 15,
 		RtoPC:  v&(1<<12) != 0,
 		TtoN:   v&(1<<7) != 0,
 		TtoR:   v&(1<<6) != 0,
@@ -123,7 +123,7 @@ func newALU(v uint16) ALU {
 func isALU(v uint16) bool { return v&(7<<13) == 3<<13 }
 
 func (v ALU) value() uint16 {
-	ret := v.Opcode << 8
+	ret := uint16(v.Opcode) << 8
 	if v.RtoPC {
 		ret |= 1 << 12
 	}
@@ -143,32 +143,8 @@ func (v ALU) value() uint16 {
 
 func (v ALU) compile() uint16 { return v.value() | (3 << 13) }
 
-const (
-	opT = iota
-	opN
-	opTplusN
-	opTandN
-	opTorN
-	opTxorN
-	opNotT
-	opNeqT
-	opNleT
-	opNrshiftT
-	opTminus1
-	opR
-	opAtT
-	opNlshiftT
-	opDepth
-	opNuleT
-)
-
-var opcodeNames = []string{
-	"T", "N", "T+N", "T∧N", "T∨N", "T⊻N", "¬T", "N=T",
-	"N<T", "N≫T", "T-1", "R", "[T]", "N≪T", "D", "Nu<T",
-}
-
 func (v ALU) String() string {
-	s := "T ← " + opcodeNames[v.Opcode]
+	s := fmt.Sprintf("T ← %v", v.Opcode)
 	if v.RtoPC {
 		s += " R→PC"
 	}
